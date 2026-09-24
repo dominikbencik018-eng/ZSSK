@@ -1,0 +1,10 @@
+{
+  "name": "ZSSK",
+  "short_name": "ZSSK",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12345b",
+  "theme_color": "#12345b",
+  "orientation": "any"
+}
