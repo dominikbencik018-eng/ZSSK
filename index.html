@@ -490,7 +490,9 @@ button,.nav,.destination-tile{touch-action:manipulation}
       </div>
       <div id="voiceIndicator" class="voice-indicator" style="margin-top:14px"><span class="voice-dot"></span><span>Vypnutý</span></div>
       <label>Rýchlosť hlasu</label>
-      <div class="range-row"><input id="voiceRate" type="range" min="0.7" max="1.2" step="0.05" value="0.9" oninput="saveVoiceSettings()"><span id="voiceRateValue">0.90×</span></div>
+      <div class="range-row"><input id="voiceRate" type="range" min="0.7" max="1.2" step="0.05" value="0.84" oninput="saveVoiceSettings()"><span id="voiceRateValue">0.84×</span></div>
+      <label>Výška hlasu</label>
+      <div class="range-row"><input id="voicePitch" type="range" min="0.75" max="1.15" step="0.05" value="0.90" oninput="saveVoiceSettings()"><span id="voicePitchValue">0.90×</span></div>
       <label>Hlasitosť</label>
       <div class="range-row"><input id="voiceVolume" type="range" min="0" max="1" step="0.05" value="1" oninput="saveVoiceSettings()"><span id="voiceVolumeValue">100 %</span></div>
       <button class="primary" onclick="testVoiceSystem()">🔔 Prehrať skúšobné hlásenie</button>
@@ -498,7 +500,7 @@ button,.nav,.destination-tile{touch-action:manipulation}
     </div>
     <div class="card">
       <h3>Ako systém hlási</h3>
-      <p class="muted">Pred hlásením zaznie vlastná elektronická zvonkohra. Systém potom použije slovenský hlas dostupný v zariadení.</p>
+      <p class="muted">Pred hlásením zaznie úvodná staničná zvonkohra a po dohovorení krátka záverečná zvonkohra. Hlas používa slovenskú systémovú reč zariadenia s pomalším tempom, nižšou intonáciou a prirodzenejšími pauzami. Nejde o kópiu originálnej nahrávky ZSSK.</p>
       <div class="voice-preview"><b>Trasa</b><div class="muted" style="margin-top:6px">Pri stanici hlásenia sa čítajú iba nasledujúce zastávky. Stanice, ktoré už vlak prešiel, sa v smere jazdy neopakujú.</div></div>
       <div class="voice-preview"><b>Podporované hlásenia</b><div class="muted" style="margin-top:6px">Meškanie · príchod · odchod · zrušenie · nehoda na trati.</div></div>
     </div>
@@ -1392,17 +1394,19 @@ function fillAlertTrains(){
 
 
 let voiceSystemEnabled=false;
-let voiceSettings={rate:0.9,volume:1};
+let voiceSettings={rate:0.84,pitch:0.90,volume:1};
+let voiceAudioContext=null;
 
 function loadVoiceSettings(){
   voiceSystemEnabled=localStorage.getItem("zsskVoice_enabled")==="1";
   try{voiceSettings={...voiceSettings,...JSON.parse(localStorage.getItem("zsskVoice_settings")||"{}")};}catch(e){}
-  const r=document.getElementById("voiceRate"),v=document.getElementById("voiceVolume");
-  if(r) r.value=voiceSettings.rate;if(v) v.value=voiceSettings.volume;
+  const r=document.getElementById("voiceRate"),p=document.getElementById("voicePitch"),v=document.getElementById("voiceVolume");
+  if(r) r.value=voiceSettings.rate;if(p) p.value=voiceSettings.pitch;if(v) v.value=voiceSettings.volume;
   renderVoiceSettings();
 }
 function saveVoiceSettings(){
-  voiceSettings.rate=Number(document.getElementById("voiceRate")?.value||0.9);
+  voiceSettings.rate=Number(document.getElementById("voiceRate")?.value||0.84);
+  voiceSettings.pitch=Number(document.getElementById("voicePitch")?.value||0.90);
   voiceSettings.volume=Number(document.getElementById("voiceVolume")?.value||1);
   localStorage.setItem("zsskVoice_settings",JSON.stringify(voiceSettings));renderVoiceSettings();
 }
@@ -1410,23 +1414,71 @@ function renderVoiceSettings(){
   const b=document.getElementById("voiceToggleBtn"),i=document.getElementById("voiceIndicator");
   if(b) b.textContent=voiceSystemEnabled?"Vypnúť":"Zapnúť";
   if(i){i.classList.toggle("on",voiceSystemEnabled);i.querySelector("span:last-child").textContent=voiceSystemEnabled?"Zapnutý":"Vypnutý";}
-  const rv=document.getElementById("voiceRateValue"),vv=document.getElementById("voiceVolumeValue");
-  if(rv)rv.textContent=Number(voiceSettings.rate).toFixed(2)+"×";if(vv)vv.textContent=Math.round(voiceSettings.volume*100)+" %";
+  const rv=document.getElementById("voiceRateValue"),pv=document.getElementById("voicePitchValue"),vv=document.getElementById("voiceVolumeValue");
+  if(rv)rv.textContent=Number(voiceSettings.rate).toFixed(2)+"×";
+  if(pv)pv.textContent=Number(voiceSettings.pitch).toFixed(2)+"×";
+  if(vv)vv.textContent=Math.round(voiceSettings.volume*100)+" %";
 }
-function toggleVoiceSystem(){voiceSystemEnabled=!voiceSystemEnabled;localStorage.setItem("zsskVoice_enabled",voiceSystemEnabled?"1":"0");renderVoiceSettings();toast("Hlasový systém "+(voiceSystemEnabled?"zapnutý":"vypnutý"));}
+function toggleVoiceSystem(){
+  voiceSystemEnabled=!voiceSystemEnabled;
+  localStorage.setItem("zsskVoice_enabled",voiceSystemEnabled?"1":"0");
+  renderVoiceSettings();
+  // používateľské kliknutie zároveň odomkne zvuk na iOS/Safari
+  try{const C=window.AudioContext||window.webkitAudioContext;if(C){voiceAudioContext=voiceAudioContext||new C();voiceAudioContext.resume?.();}}catch(e){}
+  toast("Hlasový systém "+(voiceSystemEnabled?"zapnutý":"vypnutý"));
+}
 function stopAnnouncement(){if("speechSynthesis" in window) speechSynthesis.cancel();}
-function playStationChime(){
+function stationChime(kind="start"){
   return new Promise(resolve=>{
     try{
-      const C=window.AudioContext||window.webkitAudioContext;if(!C)return resolve();const ctx=new C();
-      const notes=[659.25,783.99,987.77];notes.forEach((f,n)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0,ctx.currentTime+n*.22);g.gain.linearRampToValueAtTime(.12*voiceSettings.volume,ctx.currentTime+n*.22+.03);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+n*.22+.32);o.connect(g);g.connect(ctx.destination);o.start(ctx.currentTime+n*.22);o.stop(ctx.currentTime+n*.22+.34);});
-      setTimeout(()=>{ctx.close().catch(()=>{});resolve();},850);
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return resolve();
+      const ctx=voiceAudioContext||new C();voiceAudioContext=ctx;ctx.resume?.();
+      const now=ctx.currentTime+.03;
+      // Vlastná, neutrálna staničná zvonkohra – nie originálna nahrávka ZSSK.
+      const notes=kind==="end"
+        ? [{f:880,t:0,d:.24,g:.10},{f:659.25,t:.22,d:.42,g:.085}]
+        : [{f:659.25,t:0,d:.34,g:.09},{f:783.99,t:.24,d:.34,g:.10},{f:987.77,t:.48,d:.48,g:.085}];
+      notes.forEach(n=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.type="sine";o.frequency.setValueAtTime(n.f,now+n.t);
+        g.gain.setValueAtTime(.0001,now+n.t);
+        g.gain.exponentialRampToValueAtTime(Math.max(.001,n.g*voiceSettings.volume),now+n.t+.035);
+        g.gain.exponentialRampToValueAtTime(.0001,now+n.t+n.d);
+        o.connect(g);g.connect(ctx.destination);o.start(now+n.t);o.stop(now+n.t+n.d+.03);
+      });
+      setTimeout(resolve,kind==="end"?720:1150);
     }catch(e){resolve();}
   });
 }
-function speakSlovak(text,force=false){
-  if(!force&&!voiceSystemEnabled)return;if(!("speechSynthesis" in window))return toast("Toto zariadenie nepodporuje hlasové čítanie");
-  speechSynthesis.cancel();playStationChime().then(()=>{const u=new SpeechSynthesisUtterance(text);const voices=speechSynthesis.getVoices();u.voice=voices.find(v=>/^sk(-|_)/i.test(v.lang))||voices.find(v=>/sk/i.test(v.lang))||null;u.lang="sk-SK";u.rate=voiceSettings.rate;u.volume=voiceSettings.volume;speechSynthesis.speak(u);});
+function bestSlovakVoice(){
+  const voices=speechSynthesis.getVoices();
+  return voices.find(v=>/^sk[-_]/i.test(v.lang)&&/premium|enhanced|natural/i.test(v.name))
+      || voices.find(v=>/^sk[-_]/i.test(v.lang))
+      || voices.find(v=>/slovak/i.test(v.name))
+      || null;
+}
+function prepareSpeechText(text){
+  return String(text||"")
+    .replace(/\bR\s*(\d+)/gi,"rýchlik $1")
+    .replace(/\bOs\s*(\d+)/gi,"osobný vlak $1")
+    .replace(/\bEx\s*(\d+)/gi,"expres $1")
+    .replace(/\bIC\s*(\d+)/gi,"InterCity $1")
+    .replace(/\bEC\s*(\d+)/gi,"EuroCity $1")
+    .replace(/\b(\d{1,2}):(\d{2})\b/g,"$1 hodín $2 minút")
+    .replace(/, /g,",  ")
+    .replace(/\. /g,".   ");
+}
+async function speakSlovak(text,force=false){
+  if(!force&&!voiceSystemEnabled)return;
+  if(!("speechSynthesis" in window))return toast("Toto zariadenie nepodporuje hlasové čítanie");
+  speechSynthesis.cancel();
+  await stationChime("start");
+  const u=new SpeechSynthesisUtterance(prepareSpeechText(text));
+  const v=bestSlovakVoice();if(v)u.voice=v;
+  u.lang="sk-SK";u.rate=voiceSettings.rate;u.pitch=voiceSettings.pitch;u.volume=voiceSettings.volume;
+  u.onend=()=>stationChime("end");
+  u.onerror=()=>{};
+  speechSynthesis.speak(u);
 }
 function fillAlertStations(){
   const train=document.getElementById("alertTrain")?.value,s=document.getElementById("alertStation");if(!s)return;s.innerHTML="";const r=data[train];if(!r)return;
