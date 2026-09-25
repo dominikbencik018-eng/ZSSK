@@ -11,6 +11,7 @@
 
 <meta charset="UTF-8">
 <title>ZSSK – Vlakový terminál</title>
+<!-- ZSSK voice fix v33 -->
 <style>
 :root{--blue:#1565d8;--blue2:#0b4fae;--bg:#f3f6fa;--card:#fff;--text:#17202a;--muted:#6b7280;--red:#e53935;--green:#16834b;--line:#dce3ec}
 *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -497,6 +498,10 @@ button,.nav,.destination-tile{touch-action:manipulation}
       <div class="range-row"><input id="voiceVolume" type="range" min="0" max="1" step="0.05" value="1" oninput="saveVoiceSettings()"><span id="voiceVolumeValue">100 %</span></div>
       <button class="primary" onclick="testVoiceSystem()">🔔 Prehrať skúšobné hlásenie</button>
       <button class="smallbtn" style="width:100%;margin-top:10px" onclick="stopAnnouncement()">■ Zastaviť hlásenie</button>
+      <div class="voice-preview" style="margin-top:12px">
+        <b>Diagnostika hlasu</b>
+        <div id="voiceDiag" class="muted" style="margin-top:6px">Pripravené na test.</div>
+      </div>
     </div>
     <div class="card">
       <h3>Ako systém hlási</h3>
@@ -1470,56 +1475,108 @@ function prepareSpeechText(text){
 }
 let activeSpeechUtterance=null;
 let speechWatchdog=null;
-async function speakSlovak(text,force=false){
-  if(!force&&!voiceSystemEnabled)return;
-  if(!("speechSynthesis" in window))return toast("Toto zariadenie nepodporuje hlasové čítanie");
-  const spoken=prepareSpeechText(text);
-  if(!spoken.trim())return toast("Hlásenie nemá text");
 
-  // iOS/Safari je citlivý na cancel() + okamžité speak(). Držíme preto utterance
-  // v globálnej premennej, obnovíme syntézu a po zvonkohre pridáme krátku pauzu.
+function setVoiceDiag(message){
+  const el=document.getElementById("voiceDiag");
+  if(el) el.textContent=message;
+}
+
+function speakSlovak(text,force=false){
+  if(!force&&!voiceSystemEnabled)return;
+  if(!("speechSynthesis" in window)){
+    setVoiceDiag("Chyba: zariadenie nepodporuje SpeechSynthesis.");
+    return toast("Toto zariadenie nepodporuje hlasové čítanie");
+  }
+
+  const spoken=prepareSpeechText(text);
+  if(!spoken.trim()) return toast("Hlásenie nemá text");
+
+  /*
+    iPhone/Safari fix:
+    speechSynthesis.speak() sa volá priamo v tom istom kliknutí používateľa.
+    Už nečakáme cez await na zvonkohru, pretože Safari môže po await stratiť
+    povolenie na spustenie hlasu. Úvodná zvonkohra sa spustí súčasne ako
+    krátka zvuková sekvencia a reč sa zaradí okamžite.
+  */
   clearTimeout(speechWatchdog);
-  speechSynthesis.cancel();
-  if(speechSynthesis.paused) speechSynthesis.resume();
-  await stationChime("start");
-  await new Promise(r=>setTimeout(r,420));
+
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(C){
+      voiceAudioContext=voiceAudioContext||new C();
+      if(voiceAudioContext.state==="suspended") voiceAudioContext.resume();
+    }
+  }catch(e){}
+
+  const voices=speechSynthesis.getVoices();
+  const chosen=bestSlovakVoice();
+  setVoiceDiag(
+    chosen
+      ? `Hlas nájdený: ${chosen.name} (${chosen.lang}). Spúšťam zvonkohru…`
+      : `Slovenský hlas nebol nájdený. Použije sa systémový hlas. Dostupných hlasov: ${voices.length}.`
+  );
 
   const u=new SpeechSynthesisUtterance(spoken);
   activeSpeechUtterance=u;
-  const v=bestSlovakVoice(); if(v) u.voice=v;
+  if(chosen) u.voice=chosen;
   u.lang="sk-SK";
-  u.rate=Number(voiceSettings.rate)||0.88;
-  u.pitch=Number(voiceSettings.pitch)||0.92;
+  u.rate=Number(voiceSettings.rate)||0.90;
+  u.pitch=Number(voiceSettings.pitch)||1.00;
   u.volume=Number(voiceSettings.volume)||1;
 
-  let started=false, finished=false;
-  u.onstart=()=>{ started=true; clearTimeout(speechWatchdog); };
-  u.onend=async()=>{
-    if(finished)return; finished=true;
+  let ended=false;
+
+  u.onstart=()=>{
+    clearTimeout(speechWatchdog);
+    setVoiceDiag(`Reč spustená${chosen?`: ${chosen.name}`:""}.`);
+  };
+
+  u.onend=()=>{
+    if(ended)return;
+    ended=true;
     activeSpeechUtterance=null;
     clearTimeout(speechWatchdog);
-    await new Promise(r=>setTimeout(r,420));
-    await stationChime("end");
+    setVoiceDiag("Reč dokončená. Prehrávam záverečnú zvonkohru.");
+    // Záverečná zvonkohra sa spustí až po skutočnom onend.
+    setTimeout(()=>{
+      stationChime("end");
+      setVoiceDiag("Hlásenie dokončené.");
+    },180);
   };
+
   u.onerror=(e)=>{
     clearTimeout(speechWatchdog);
     activeSpeechUtterance=null;
-    if(e?.error!=="canceled" && e?.error!=="interrupted") toast("Hlas sa nepodarilo spustiť – skús tlačidlo znova");
+    setVoiceDiag("Chyba TTS: "+(e?.error||"neznáma chyba"));
+    if(e?.error!=="canceled" && e?.error!=="interrupted"){
+      toast("Hlas sa nepodarilo spustiť: "+(e?.error||"chyba"));
+    }
   };
 
-  // Krátky odklad po cancel() rieši časté ticho SpeechSynthesis v iOS PWA.
-  setTimeout(()=>{
-    try{
-      if(speechSynthesis.paused) speechSynthesis.resume();
-      speechSynthesis.speak(u);
-      speechWatchdog=setTimeout(()=>{
-        if(!started && activeSpeechUtterance===u){
-          speechSynthesis.cancel();
-          setTimeout(()=>{ try{ speechSynthesis.resume(); speechSynthesis.speak(u); }catch(e){} },180);
-        }
-      },1200);
-    }catch(e){ toast("Hlas sa nepodarilo spustiť"); }
-  },180);
+  // Úvodná zvonkohra. Nečakáme na Promise, aby iOS nestratil user gesture.
+  stationChime("start");
+
+  try{
+    // Na iOS sa vyhýbame cancel() tesne pred speak(), pretože vie zablokovať ďalšiu utterance.
+    if(speechSynthesis.paused) speechSynthesis.resume();
+    speechSynthesis.speak(u);
+    setVoiceDiag(
+      chosen
+        ? `Zvonkohra spustená. Čakám na hlas ${chosen.name}…`
+        : "Zvonkohra spustená. Čakám na systémový slovenský hlas…"
+    );
+
+    speechWatchdog=setTimeout(()=>{
+      if(activeSpeechUtterance===u && !speechSynthesis.speaking){
+        setVoiceDiag("TTS sa nespustilo. Skús tlačidlo Prehrať ešte raz.");
+        toast("iPhone nespustil hlas – skús Prehrať ešte raz");
+      }
+    },2500);
+  }catch(e){
+    activeSpeechUtterance=null;
+    setVoiceDiag("Chyba pri spustení TTS: "+e.message);
+    toast("Hlas sa nepodarilo spustiť");
+  }
 }
 function fillAlertStations(){
   const train=document.getElementById("alertTrain")?.value,s=document.getElementById("alertStation");if(!s)return;s.innerHTML="";const r=data[train];if(!r)return;
