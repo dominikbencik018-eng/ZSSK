@@ -1468,27 +1468,58 @@ function prepareSpeechText(text){
     .replace(/, /g,",  ")
     .replace(/\. /g,".   ");
 }
+let activeSpeechUtterance=null;
+let speechWatchdog=null;
 async function speakSlovak(text,force=false){
   if(!force&&!voiceSystemEnabled)return;
   if(!("speechSynthesis" in window))return toast("Toto zariadenie nepodporuje hlasové čítanie");
+  const spoken=prepareSpeechText(text);
+  if(!spoken.trim())return toast("Hlásenie nemá text");
+
+  // iOS/Safari je citlivý na cancel() + okamžité speak(). Držíme preto utterance
+  // v globálnej premennej, obnovíme syntézu a po zvonkohre pridáme krátku pauzu.
+  clearTimeout(speechWatchdog);
   speechSynthesis.cancel();
+  if(speechSynthesis.paused) speechSynthesis.resume();
   await stationChime("start");
-  // Krátka pauza po úvodnej zvonkohre pôsobí prirodzenejšie ako staničný rozhlas.
-  await new Promise(r=>setTimeout(r,260));
-  const u=new SpeechSynthesisUtterance(prepareSpeechText(text));
-  const v=bestSlovakVoice();if(v)u.voice=v;
-  u.lang="sk-SK";u.rate=voiceSettings.rate;u.pitch=voiceSettings.pitch;u.volume=voiceSettings.volume;
-  let finished=false;
-  const finish=async()=>{
-    if(finished)return;
-    finished=true;
-    // Záverečná zvonkohra sa spustí až po skutočnom ukončení reči.
-    await new Promise(r=>setTimeout(r,320));
+  await new Promise(r=>setTimeout(r,420));
+
+  const u=new SpeechSynthesisUtterance(spoken);
+  activeSpeechUtterance=u;
+  const v=bestSlovakVoice(); if(v) u.voice=v;
+  u.lang="sk-SK";
+  u.rate=Number(voiceSettings.rate)||0.88;
+  u.pitch=Number(voiceSettings.pitch)||0.92;
+  u.volume=Number(voiceSettings.volume)||1;
+
+  let started=false, finished=false;
+  u.onstart=()=>{ started=true; clearTimeout(speechWatchdog); };
+  u.onend=async()=>{
+    if(finished)return; finished=true;
+    activeSpeechUtterance=null;
+    clearTimeout(speechWatchdog);
+    await new Promise(r=>setTimeout(r,420));
     await stationChime("end");
   };
-  u.onend=finish;
-  u.onerror=(e)=>{if(e && e.error!=="canceled" && e.error!=="interrupted") finish();};
-  speechSynthesis.speak(u);
+  u.onerror=(e)=>{
+    clearTimeout(speechWatchdog);
+    activeSpeechUtterance=null;
+    if(e?.error!=="canceled" && e?.error!=="interrupted") toast("Hlas sa nepodarilo spustiť – skús tlačidlo znova");
+  };
+
+  // Krátky odklad po cancel() rieši časté ticho SpeechSynthesis v iOS PWA.
+  setTimeout(()=>{
+    try{
+      if(speechSynthesis.paused) speechSynthesis.resume();
+      speechSynthesis.speak(u);
+      speechWatchdog=setTimeout(()=>{
+        if(!started && activeSpeechUtterance===u){
+          speechSynthesis.cancel();
+          setTimeout(()=>{ try{ speechSynthesis.resume(); speechSynthesis.speak(u); }catch(e){} },180);
+        }
+      },1200);
+    }catch(e){ toast("Hlas sa nepodarilo spustiť"); }
+  },180);
 }
 function fillAlertStations(){
   const train=document.getElementById("alertTrain")?.value,s=document.getElementById("alertStation");if(!s)return;s.innerHTML="";const r=data[train];if(!r)return;
