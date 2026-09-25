@@ -490,9 +490,9 @@ button,.nav,.destination-tile{touch-action:manipulation}
       </div>
       <div id="voiceIndicator" class="voice-indicator" style="margin-top:14px"><span class="voice-dot"></span><span>Vypnutý</span></div>
       <label>Rýchlosť hlasu</label>
-      <div class="range-row"><input id="voiceRate" type="range" min="0.7" max="1.2" step="0.05" value="0.84" oninput="saveVoiceSettings()"><span id="voiceRateValue">0.84×</span></div>
+      <div class="range-row"><input id="voiceRate" type="range" min="0.7" max="1.2" step="0.05" value="0.90" oninput="saveVoiceSettings()"><span id="voiceRateValue">0.90×</span></div>
       <label>Výška hlasu</label>
-      <div class="range-row"><input id="voicePitch" type="range" min="0.75" max="1.15" step="0.05" value="0.90" oninput="saveVoiceSettings()"><span id="voicePitchValue">0.90×</span></div>
+      <div class="range-row"><input id="voicePitch" type="range" min="0.75" max="1.15" step="0.05" value="1.00" oninput="saveVoiceSettings()"><span id="voicePitchValue">1.00×</span></div>
       <label>Hlasitosť</label>
       <div class="range-row"><input id="voiceVolume" type="range" min="0" max="1" step="0.05" value="1" oninput="saveVoiceSettings()"><span id="voiceVolumeValue">100 %</span></div>
       <button class="primary" onclick="testVoiceSystem()">🔔 Prehrať skúšobné hlásenie</button>
@@ -1394,7 +1394,7 @@ function fillAlertTrains(){
 
 
 let voiceSystemEnabled=false;
-let voiceSettings={rate:0.84,pitch:0.90,volume:1};
+let voiceSettings={rate:0.90,pitch:1.00,volume:1};
 let voiceAudioContext=null;
 
 function loadVoiceSettings(){
@@ -1405,8 +1405,8 @@ function loadVoiceSettings(){
   renderVoiceSettings();
 }
 function saveVoiceSettings(){
-  voiceSettings.rate=Number(document.getElementById("voiceRate")?.value||0.84);
-  voiceSettings.pitch=Number(document.getElementById("voicePitch")?.value||0.90);
+  voiceSettings.rate=Number(document.getElementById("voiceRate")?.value||0.90);
+  voiceSettings.pitch=Number(document.getElementById("voicePitch")?.value||1.00);
   voiceSettings.volume=Number(document.getElementById("voiceVolume")?.value||1);
   localStorage.setItem("zsskVoice_settings",JSON.stringify(voiceSettings));renderVoiceSettings();
 }
@@ -1473,11 +1473,21 @@ async function speakSlovak(text,force=false){
   if(!("speechSynthesis" in window))return toast("Toto zariadenie nepodporuje hlasové čítanie");
   speechSynthesis.cancel();
   await stationChime("start");
+  // Krátka pauza po úvodnej zvonkohre pôsobí prirodzenejšie ako staničný rozhlas.
+  await new Promise(r=>setTimeout(r,260));
   const u=new SpeechSynthesisUtterance(prepareSpeechText(text));
   const v=bestSlovakVoice();if(v)u.voice=v;
   u.lang="sk-SK";u.rate=voiceSettings.rate;u.pitch=voiceSettings.pitch;u.volume=voiceSettings.volume;
-  u.onend=()=>stationChime("end");
-  u.onerror=()=>{};
+  let finished=false;
+  const finish=async()=>{
+    if(finished)return;
+    finished=true;
+    // Záverečná zvonkohra sa spustí až po skutočnom ukončení reči.
+    await new Promise(r=>setTimeout(r,320));
+    await stationChime("end");
+  };
+  u.onend=finish;
+  u.onerror=(e)=>{if(e && e.error!=="canceled" && e.error!=="interrupted") finish();};
   speechSynthesis.speak(u);
 }
 function fillAlertStations(){
