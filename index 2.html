@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12345b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ZSSK">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.webmanifest">
+
+<meta charset="UTF-8">
+<title>ZSSK – Vlakový terminál</title>
+<style>
+:root{--blue:#1565d8;--blue2:#0b4fae;--bg:#f3f6fa;--card:#fff;--text:#17202a;--muted:#6b7280;--red:#e53935;--green:#16834b;--line:#dce3ec}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text)}
+button,input,select{font:inherit}button{cursor:pointer}h1,h2,h3,p{margin-top:0}.muted{color:var(--muted)}
+.login{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(145deg,#0b55b9,#1c75df)}
+.login-card{width:min(430px,100%);background:#fff;border-radius:24px;padding:30px;box-shadow:0 20px 60px #003b7a55}
+.logo{width:68px;height:68px;border-radius:18px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:32px;margin-bottom:18px}
+label{display:block;font-size:13px;font-weight:700;margin:16px 0 7px}
+input,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.primary{border:0;background:var(--blue);color:#fff;padding:13px 16px;border-radius:12px;font-weight:700;width:100%;margin-top:20px}
+.primary:hover{background:var(--blue2)}.demo{font-size:12px;color:var(--muted);margin-top:12px;text-align:center}
+.app{display:none;min-height:100vh}.topbar{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 22px;position:sticky;top:0;z-index:5}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800}.brand-icon{width:40px;height:40px;border-radius:12px;background:var(--blue);color:#fff;display:grid;place-items:center}
+.delay{padding:9px 13px;border-radius:10px;background:#eef2f6;font-weight:800;min-width:125px;text-align:center}
+.delay.late{background:#d93025!important;color:#fff!important;border:1px solid #b4231a!important}.delay.early{background:#16834b!important;color:#fff!important;border:1px solid #0f6b3b!important}
+.layout{display:flex;min-height:calc(100vh - 72px)}.sidebar{width:235px;background:#fff;border-right:1px solid var(--line);padding:18px 12px}
+.nav{width:100%;border:0;background:transparent;text-align:left;padding:13px 14px;border-radius:12px;margin-bottom:5px;font-weight:700;color:#4b5563}
+.nav.active,.nav:hover{background:#e9f2ff;color:var(--blue)}.content{padding:24px;max-width:1200px;width:100%;margin:auto}.screen{display:none}.screen.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 3px 12px #14213d08}
+.row{display:flex;gap:10px;align-items:center}.between{display:flex;justify-content:space-between;align-items:center;gap:12px}.pill{display:inline-block;background:#eef2f7;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800}
+.big{font-size:27px;font-weight:900}.stop{display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid var(--line)}
+.stop:last-child{border-bottom:0}.stop-time{width:58px;font-weight:800;color:#374151}.stop-name{flex:1}
+.stop.next{background:#e9f2ff;margin:0 -12px;padding:15px 12px;border-radius:12px;border-bottom:0}.next-dot{width:12px;height:12px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 5px #d7e8ff}
+.arrow{width:68px;height:54px;border:0;border-radius:16px;background:var(--blue);color:#fff;font-size:28px;font-weight:900;box-shadow:0 6px 15px #1464d244}
+.arrow:active{transform:scale(.97)}.arrow:disabled{opacity:.35;cursor:not-allowed}.ticket{font-size:28px;font-weight:900}
+.pay-options{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pay{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;font-weight:800}
+.pay.selected{border-color:var(--blue);background:#e9f2ff;color:var(--blue)}.smallbtn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 10px;font-weight:700}.danger{color:var(--red)}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:11px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}
+.toast{position:fixed;right:20px;bottom:20px;background:#17202a;color:#fff;padding:13px 16px;border-radius:12px;display:none;z-index:20}
+@media(max-width:760px){.layout{display:block}.sidebar{width:100%;display:flex;overflow:auto;padding:8px;position:sticky;top:72px;z-index:4}.nav{min-width:max-content;margin:0 3px}.grid{grid-template-columns:1fr}.content{padding:16px}.pay-options{grid-template-columns:1fr}.topbar{padding:0 12px}.delay{min-width:110px;font-size:13px}}
+
+body.dark{--bg:#0f1720;--card:#18212b;--text:#eef4fb;--muted:#9aa7b5;--line:#2c3947}
+body.dark .topbar,body.dark .sidebar{background:#121a23}
+body.dark input,body.dark select,body.dark .pay,body.dark .smallbtn{background:#111923;color:var(--text);border-color:var(--line)}
+body.dark .nav{color:#c3cfda}
+body.dark .nav.active,body.dark .nav:hover{background:#17345e;color:#77b5ff}
+body.dark .stop.next{background:#17345e}
+body.dark .delay{background:#26313d;color:#eef4fb}body.dark .delay.late{background:#d93025!important;color:#fff!important}body.dark .delay.early{background:#16834b!important;color:#fff!important}
+
+
+.ops-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px}
+.ops-card .num{font-size:30px;font-weight:900;margin-top:5px}
+.board-head,.board-row{display:grid;grid-template-columns: 90px 90px minmax(180px,1.8fr) 80px 130px 100px;gap:12px;align-items:center}
+.board-head{padding:10px 12px;background:#111827;color:#fff;border-radius:10px 10px 0 0;font-size:12px;font-weight:800;text-transform:uppercase}
+.board-row{padding:13px 12px;border-bottom:1px solid var(--line)}
+.board-row:last-child{border-bottom:0}
+.board-time{font-size:19px;font-weight:900}.board-train{font-weight:900;color:var(--blue)}
+.status-pill{display:inline-block;padding:5px 8px;border-radius:999px;font-size:12px;font-weight:800;background:#e8eef5}
+.status-pill.red{background:#ffe4e4;color:#c62828}.status-pill.green{background:#e3f6eb;color:#16834b}.status-pill.orange{background:#fff1d8;color:#b66300}.status-pill.blue{background:#e9f2ff;color:#1565d8}
+.alert-item{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.alert-meta{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:7px}
+body.dark textarea{background:#111923!important;color:var(--text)!important;border-color:var(--line)!important}
+@media(max-width:760px){.board-head,.board-row{grid-template-columns:70px 90px 1fr}.board-head span:nth-child(4),.board-head span:nth-child(5),.board-row span:nth-child(4),.board-row span:nth-child(5){display:none}}
+
+
+/* Mobilné rozhranie */
+@media (max-width: 760px){
+  body{overflow-x:hidden}
+  .app,.layout,.shell,.main{max-width:100%;width:100%}
+  .sidebar{
+    width:100%!important;
+    min-width:0!important;
+    height:auto!important;
+    position:relative!important;
+  }
+  .layout,.app-shell,.shell{
+    display:flex!important;
+    flex-direction:column!important;
+  }
+  .nav-wrap,.sidebar nav{
+    display:flex!important;
+    overflow-x:auto!important;
+    gap:6px!important;
+    padding-bottom:6px!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  .nav{
+    flex:0 0 auto!important;
+    white-space:nowrap!important;
+  }
+  .content,.main,.page{
+    width:100%!important;
+    max-width:100%!important;
+    padding:12px!important;
+    box-sizing:border-box!important;
+  }
+  .topbar,.header{
+    flex-wrap:wrap!important;
+    gap:8px!important;
+  }
+  .cards,.stats,.grid{
+    grid-template-columns:1fr!important;
+  }
+  table{
+    min-width:650px;
+  }
+  .table-wrap,.table-container{
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+  input,select,button,textarea{
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  .board-head,.board-row{
+    grid-template-columns:minmax(72px,.8fr) minmax(72px,.8fr) minmax(145px,1.8fr) minmax(58px,.6fr) minmax(110px,1fr) minmax(90px,.8fr)!important;
+    min-width:620px;
+  }
+  #boardContent{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+}
+@media (max-width: 430px){
+  .content,.main,.page{padding:8px!important}
+  h1{font-size:22px!important}
+  h2{font-size:18px!important}
+  .delay{font-size:16px!important}
+  button{min-height:40px}
+}
+
+
+
+/* ZSSK Stanice – vzhľad z IDS BBSK */
+.route-panel{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 5px 20px #14213d12}
+.route-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#ffffff,#f7f9fc)}
+body.dark .route-head{background:linear-gradient(180deg,#18212b,#131c26)}
+.route-title{font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.route-stop-count{font-size:12px;font-weight:800;color:var(--muted)}
+.stop-real{display:grid;grid-template-columns:72px 30px 1fr auto;gap:10px;align-items:center;min-height:72px;padding:0 16px;position:relative;border-bottom:1px solid var(--line)}
+.stop-real:last-child{border-bottom:0}
+.stop-real .time-main{font-size:18px;font-weight:900;font-variant-numeric:tabular-nums;text-align:right}
+.stop-real .route-axis{height:72px;position:relative;display:flex;align-items:center;justify-content:center}
+.stop-real .route-axis:before{content:"";position:absolute;top:0;bottom:0;width:4px;background:#c9d6e6;border-radius:4px}
+.stop-real:first-child .route-axis:before{top:50%}
+.stop-real:last-child .route-axis:before{bottom:50%}
+.route-dot{width:14px;height:14px;border-radius:50%;background:#fff;border:4px solid #94a8c0;z-index:1}
+.stop-real.active{background:#eaf3ff}
+body.dark .stop-real.active{background:#17345e}
+.stop-real.active .route-axis:before{background:var(--blue)}
+.stop-real.active .route-dot{width:18px;height:18px;border-color:var(--blue);box-shadow:0 0 0 5px #cfe3ff}
+.stop-real .stop-main{min-width:0}
+.stop-real .stop-name-real{font-size:17px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stop-real .stop-sub{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:3px}
+.stop-real.active .stop-sub{color:var(--blue)}
+.stop-badge{font-size:11px;font-weight:900;border-radius:999px;padding:5px 8px;background:#eef2f7;color:#516173;white-space:nowrap}
+.stop-real.active .stop-badge{background:var(--blue);color:#fff}
+.stop-controls{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+.stop-control-text{font-size:12px;color:var(--muted);font-weight:700}
+.stop-arrow{width:64px;height:50px;border:0;border-radius:14px;background:var(--blue);color:#fff;font-size:26px;font-weight:900;box-shadow:0 5px 13px #1565d844}
+.stop-arrow:disabled{opacity:.3;box-shadow:none;cursor:not-allowed}
+.finish-btn-real{width:100%;margin-top:12px;border:0;background:#d93025;color:#fff;border-radius:14px;padding:13px 16px;font-weight:900}
+@media(max-width:600px){
+  .stop-real{grid-template-columns:58px 24px 1fr auto;padding:0 10px;min-height:66px}
+  .stop-real .time-main{font-size:16px}
+  .stop-real .stop-name-real{font-size:15px}
+  .stop-badge{font-size:10px;padding:4px 6px}
+}
+
+
+/* Realistický platobný terminál */
+.pay-terminal-overlay{position:fixed;inset:0;background:#08111dcc;display:none;align-items:center;justify-content:center;padding:18px;z-index:1000}
+.pay-terminal-overlay.open{display:flex}
+.pay-terminal{width:min(390px,100%);background:#111922;color:#fff;border-radius:24px;overflow:hidden;box-shadow:0 30px 80px #0008;border:1px solid #334155}
+.pay-terminal-top{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:#0b1220;border-bottom:1px solid #263242}
+.pay-terminal-brand{font-size:13px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.pay-terminal-close{border:0;background:transparent;color:#9fb0c3;font-size:24px;line-height:1}
+.pay-terminal-body{padding:28px 22px 24px;text-align:center}
+.pay-terminal-icon{font-size:54px;margin-bottom:14px}
+.pay-terminal-title{font-size:24px;font-weight:900;margin-bottom:6px}
+.pay-terminal-sub{font-size:13px;color:#a8b5c4;min-height:34px}
+.pay-terminal-amount{font-size:36px;font-weight:950;margin:22px 0;font-variant-numeric:tabular-nums}
+.pay-terminal-wave{display:flex;justify-content:center;gap:6px;margin:18px 0}
+.pay-terminal-wave span{width:8px;height:8px;border-radius:50%;background:#6ea8ff;animation:paypulse 1.1s infinite ease-in-out}
+.pay-terminal-wave span:nth-child(2){animation-delay:.15s}.pay-terminal-wave span:nth-child(3){animation-delay:.3s}
+@keyframes paypulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+.pay-terminal-ok{background:#143d2a;border:1px solid #2c8b5d}
+.pay-terminal-approved{font-size:58px;color:#5ed58a;margin-bottom:10px}
+.pay-terminal-actions{display:flex;gap:10px;margin-top:18px}
+.pay-terminal-btn{flex:1;border:0;border-radius:12px;padding:12px 14px;font-weight:900}
+.pay-terminal-btn.primary{background:#1565d8;color:#fff}
+.pay-terminal-btn.secondary{background:#273446;color:#fff}
+.cash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;margin-top:14px}
+.cash-box{background:#162231;border:1px solid #314257;border-radius:12px;padding:12px}
+.cash-label{font-size:10px;color:#9fb0c3;text-transform:uppercase;font-weight:900}
+.cash-value{font-size:20px;font-weight:900;margin-top:3px}
+
+
+/* Realistický výber cieľovej zastávky/stanice */
+.destination-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.destination-tile{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:14px;min-height:76px;text-align:left;font-weight:800;display:flex;flex-direction:column;justify-content:center;gap:5px;transition:.15s}
+.destination-tile:hover{border-color:var(--blue);transform:translateY(-1px)}
+.destination-tile.selected{background:#e9f2ff;border-color:var(--blue);color:var(--blue);box-shadow:0 0 0 2px #1565d822}
+body.dark .destination-tile.selected{background:#17345e;color:#8ec1ff}
+.destination-name{font-size:15px;line-height:1.2}
+.destination-meta{font-size:11px;color:var(--muted);font-weight:700}
+.price-breakdown{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#f7f9fc;font-size:12px;color:var(--muted)}
+body.dark .price-breakdown{background:#111923}
+@media(max-width:560px){.destination-grid{grid-template-columns:1fr}}
+
+
+/* História transakcií */
+.transaction-list{display:flex;flex-direction:column;gap:10px}
+.transaction-card{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.transaction-title{font-size:15px;font-weight:900}
+.transaction-meta{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+.transaction-price{font-size:20px;font-weight:950;font-variant-numeric:tabular-nums}
+.transaction-empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px}
+
+
+/* Fullscreen + UI zoom */
+.ui-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ui-tool-btn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:10px;padding:8px 10px;font-weight:800}
+.ui-zoom-select{width:auto;min-width:92px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
+body{--ui-scale:1}
+#app{transform-origin:top left}
+.sticky-tools{position:sticky;top:72px;z-index:6;background:var(--bg);padding:8px 0 10px;margin-bottom:8px}
+@media(max-width:760px){
+  .sticky-tools{top:72px}
+  .ui-tools{width:100%}
+  .ui-tool-btn,.ui-zoom-select{flex:1}
+}
+
+
+/* iPhone PWA */
+html,body{width:100%;min-height:100%;margin:0}
+body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+input,select,textarea,button{font-size:16px}
+*{-webkit-tap-highlight-color:transparent}
+button,.nav,.destination-tile{touch-action:manipulation}
+@media(max-width:700px){
+ body{overflow-x:hidden}
+ main,.content{width:100%;max-width:100%;min-width:0;box-sizing:border-box;padding-left:12px!important;padding-right:12px!important}
+ .between{flex-wrap:wrap;gap:10px}
+ .card,select,input,textarea{max-width:100%;box-sizing:border-box}
+ .pay-terminal-overlay{padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom))}
+}
+
+
+/* Hlasový staničný systém */
+.voice-switch{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border:1px solid var(--line);border-radius:14px;margin-top:12px}
+.voice-indicator{display:inline-flex;align-items:center;gap:7px;font-weight:900}.voice-dot{width:10px;height:10px;border-radius:50%;background:#9aa7b5}.voice-indicator.on .voice-dot{background:#16834b;box-shadow:0 0 0 4px #16834b22}
+.voice-preview{margin-top:14px;padding:14px;border:1px dashed var(--line);border-radius:12px;line-height:1.55}
+.range-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}.range-row input{padding:0}
+</style>
+</head>
+<body>
+
+<section id="login" class="login">
+<div class="login-card">
+<div class="logo">🚆</div>
+<h1>ZSSK</h1>
+<p class="muted">Prihlásenie do vlakového systému</p>
+<label>Užívateľské meno</label><input id="user" value="driver">
+<label>Heslo</label><input id="pass" type="password" value="1234">
+<button class="primary" onclick="login()">Prihlásiť sa</button>
+<div class="demo">Rušňovodič: vlak / 1234 · Developer: admin / admin</div>
+</div>
+</section>
+
+<section id="app" class="app">
+<header class="topbar">
+<div class="brand"><div class="brand-icon">🚆</div><div>ZSSK<br><span class="muted" style="font-size:12px">Vlakový terminál</span></div></div>
+<div id="delayBox" class="delay">00:00</div>
+</header>
+<div class="layout">
+<aside class="sidebar">
+<button class="nav active" data-screen="home">🏠 Prehľad</button>
+<button class="nav" data-screen="opsOverview">📊 Prevádzkový prehľad</button>
+<button class="nav" data-screen="payments">💳 Platby</button>
+<button class="nav" data-screen="stops">🚉 Stanice</button>
+<button class="nav" data-screen="timetable">🕒 Grafikon</button>
+<button class="nav" data-screen="departureBoard">▤ Odchodová tabuľa</button>
+<button class="nav" data-screen="alerts">📢 Prevádzkové hlásenia</button>
+<button class="nav" data-screen="voiceSystem">🔊 Hlasový systém</button>
+<button class="nav" data-screen="developer">🛠️ Developer</button>
+<button class="nav" data-screen="transactions">🧾 Transakcie</button>
+<button class="nav" data-screen="save">⚙️ Nastavenia</button>
+<button class="nav" onclick="logout()">↪ Odhlásiť</button>
+</aside>
+
+<main class="content">
+
+<div class="sticky-tools">
+  <div class="ui-tools">
+    <button class="ui-tool-btn" onclick="toggleFullscreen()">⛶ Celá obrazovka</button>
+    <select id="uiZoom" class="ui-zoom-select" onchange="setUiZoom(this.value)">
+      <option value="0.9">90 %</option>
+      <option value="1" selected>100 %</option>
+      <option value="1.1">110 %</option>
+      <option value="1.25">125 %</option>
+    </select>
+  </div>
+</div>
+
+
+<section id="home" class="screen active">
+<div class="card">
+  <div class="between">
+    <div id="homeLineBadge" style="background:var(--blue);color:#fff;padding:8px 13px;border-radius:10px;font-weight:900;font-size:20px">100</div>
+    <span class="pill" id="driverName">Rušňovodič</span>
+  </div>
+
+  <div style="margin-top:26px">
+    <div class="muted">Konečná stanica</div>
+    <div class="big" id="homeFinal">—</div>
+  </div>
+
+  <div style="margin-top:22px">
+    <div class="muted">Stav jazdy</div>
+    <div class="big" id="homeDelay">Na čas</div>
+  </div>
+
+  <div style="margin-top:22px">
+    <div class="muted">Nasledujúca stanica</div>
+    <div style="font-size:21px;font-weight:800" id="homeNext">—</div>
+  </div>
+</div>
+</section>
+
+
+<section id="payments" class="screen">
+<h2>💳 Platby</h2>
+<div class="grid">
+<div class="card">
+<label>Vlak</label><select id="payLine"></select>
+<label>Cieľová stanica</label>
+<select id="payStop" style="display:none"></select>
+<div id="destinationGrid" class="destination-grid"></div>
+<div id="priceBreakdown" class="price-breakdown">Cena sa vypočíta automaticky podľa vzdialenosti.</div>
+<label>Cestovné</label>
+<select id="tariff">
+<option value="1.00">Dospelý</option>
+<option value="0.50">Študentský</option>
+<option value="0.50">Polovičný</option>
+<option value="0.30">Senior 70+</option>
+</select>
+<div style="margin-top:20px" class="muted">Cena</div><div class="ticket"><span id="price">2,00</span> €</div>
+<label>Spôsob platby</label>
+<div class="pay-options">
+<button class="pay selected" onclick="choosePay(this,'Hotovosť')">💶 Hotovosť</button>
+<button class="pay" onclick="choosePay(this,'Platobná karta')">💳 Karta</button>
+<button class="pay" onclick="choosePay(this,'ZSSK karta')">🪪 ZSSK karta</button>
+</div>
+<button class="primary" onclick="sellTicket()">Predať lístok</button>
+</div>
+<div class="card"><h3>Posledná transakcia</h3><div id="lastPayment" class="muted">Zatiaľ nebola vykonaná žiadna transakcia.</div></div>
+</div>
+</section>
+
+
+<section id="stops" class="screen">
+<div class="between">
+  <div>
+    <h2>🚉 Stanice</h2>
+    <p class="muted">Aktuálny priebeh vlaku</p>
+  </div>
+  <select id="routeSelect" style="width:260px"></select>
+</div>
+
+<div class="route-panel" style="margin-top:18px">
+  <div class="route-head">
+    <div class="route-title">Priebeh trasy</div>
+    <div class="route-stop-count" id="visibleStopCount">0 staníc</div>
+  </div>
+  <div id="stopList"></div>
+</div>
+
+<div class="stop-controls">
+  <div class="stop-control-text">← predchádzajúca stanica · T / → ďalšia stanica</div>
+  <div class="row">
+    <button id="leftArrow" class="stop-arrow" onclick="previousStop()">←</button>
+    <button id="rightArrow" class="stop-arrow" onclick="nextStop()">→</button>
+  </div>
+</div>
+
+<div id="finishTripWrap" style="display:none">
+  <button class="finish-btn-real" onclick="finishTrip()">Ukončiť vlak</button>
+</div>
+</section>
+
+
+<section id="opsOverview" class="screen">
+<h2>📊 Prevádzkový prehľad</h2>
+<div id="opsStats" class="grid"></div>
+<div class="card" style="margin-top:18px">
+  <div class="between">
+    <h3>Aktuálna prevádzka</h3>
+    <span class="pill">živý prehľad</span>
+  </div>
+  <div id="opsTable"></div>
+</div>
+</section>
+
+<section id="timetable" class="screen">
+<h2>🕒 Grafikon</h2>
+<p class="muted">Príchody a odchody sa automaticky počítajú z času začiatku vlaku a minút medzi stanicami.</p>
+<div id="timetableContent"></div>
+</section>
+
+<section id="departureBoard" class="screen">
+<div class="between">
+  <div>
+    <h2>▤ Odchodová tabuľa</h2>
+    <p class="muted">Elektronická tabuľa pre vybranú stanicu.</p>
+  </div>
+  <select id="boardStation" style="width:280px" onchange="renderDepartureBoard()"></select>
+</div>
+<div class="card" style="margin-top:18px">
+  <div id="boardContent"></div>
+</div>
+</section>
+
+<section id="alerts" class="screen">
+<h2>📢 Prevádzkové hlásenia</h2>
+<div class="grid">
+  <div class="card">
+    <h3>Nové hlásenie</h3>
+    <label>Vlak</label>
+    <select id="alertTrain"></select>
+
+    <label>Typ hlásenia</label>
+    <select id="alertType" onchange="updateAnnouncementPreview()">
+      <option value="delay">Meškanie</option>
+      <option value="arrival">Príchod</option>
+      <option value="departure">Odchod</option>
+      <option value="cancel">Zrušenie</option>
+      <option value="incident">Nehoda na trati</option>
+    </select>
+
+    <label>Stanica hlásenia</label>
+    <select id="alertStation" onchange="updateAnnouncementPreview()"></select>
+
+    <label>Koľaj / nástupište</label>
+    <input id="alertPlatform" placeholder="napr. 3" oninput="updateAnnouncementPreview()">
+
+    <label>Stav vlaku</label>
+    <select id="alertStatus" onchange="updateAnnouncementPreview()">
+      <option>Včas</option>
+      <option>Na ceste</option>
+      <option>Mešká</option>
+      <option>Nehoda</option>
+      <option>Zrušený</option>
+      <option>Odklonený</option>
+      <option>Mimoriadne zastavenie</option>
+      <option>Náhradná doprava</option>
+    </select>
+
+    <label>Meškanie (min.)</label>
+    <input id="alertDelay" type="number" min="0" value="0" oninput="updateAnnouncementPreview()">
+
+    <label>Text hlásenia</label>
+    <textarea id="alertText" rows="4" style="width:100%;resize:vertical;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text)" placeholder="Napr. Vlak mešká z prevádzkových dôvodov." oninput="updateAnnouncementPreview()"></textarea>
+
+    <div class="voice-preview"><b>🔊 Náhľad automatického hlásenia</b><div id="announcementPreview" class="muted" style="margin-top:6px">—</div></div>
+
+    <button class="primary" onclick="addOperationalAlert()">Publikovať hlásenie</button>
+  </div>
+
+  <div class="card">
+    <h3>Aktuálne hlásenia</h3>
+    <div id="alertsList"></div>
+  </div>
+</div>
+</section>
+
+
+<section id="voiceSystem" class="screen">
+  <h2>🔊 Hlasový systém</h2>
+  <p class="muted">Automatické staničné hlásenia vytvorené z údajov vlaku, aktuálnej stanice a prevádzkových hlásení.</p>
+  <div class="grid">
+    <div class="card">
+      <h3>Staničný rozhlas</h3>
+      <div class="voice-switch">
+        <div><b>Automatické hlásenia</b><div class="muted" style="font-size:12px">Po publikovaní prevádzkového hlásenia</div></div>
+        <button id="voiceToggleBtn" class="smallbtn" onclick="toggleVoiceSystem()">Zapnúť</button>
+      </div>
+      <div id="voiceIndicator" class="voice-indicator" style="margin-top:14px"><span class="voice-dot"></span><span>Vypnutý</span></div>
+      <label>Rýchlosť hlasu</label>
+      <div class="range-row"><input id="voiceRate" type="range" min="0.7" max="1.2" step="0.05" value="0.90" oninput="saveVoiceSettings()"><span id="voiceRateValue">0.90×</span></div>
+      <label>Výška hlasu</label>
+      <div class="range-row"><input id="voicePitch" type="range" min="0.75" max="1.15" step="0.05" value="1.00" oninput="saveVoiceSettings()"><span id="voicePitchValue">1.00×</span></div>
+      <label>Hlasitosť</label>
+      <div class="range-row"><input id="voiceVolume" type="range" min="0" max="1" step="0.05" value="1" oninput="saveVoiceSettings()"><span id="voiceVolumeValue">100 %</span></div>
+      <button class="primary" onclick="testVoiceSystem()">🔔 Prehrať skúšobné hlásenie</button>
+      <button class="smallbtn" style="width:100%;margin-top:10px" onclick="stopAnnouncement()">■ Zastaviť hlásenie</button>
+    </div>
+    <div class="card">
+      <h3>Ako systém hlási</h3>
+      <p class="muted">Pred hlásením zaznie úvodná staničná zvonkohra a po dohovorení krátka záverečná zvonkohra. Hlas používa slovenskú systémovú reč zariadenia s pomalším tempom, nižšou intonáciou a prirodzenejšími pauzami. Nejde o kópiu originálnej nahrávky ZSSK.</p>
+      <div class="voice-preview"><b>Trasa</b><div class="muted" style="margin-top:6px">Pri stanici hlásenia sa čítajú iba nasledujúce zastávky. Stanice, ktoré už vlak prešiel, sa v smere jazdy neopakujú.</div></div>
+      <div class="voice-preview"><b>Podporované hlásenia</b><div class="muted" style="margin-top:6px">Meškanie · príchod · odchod · zrušenie · nehoda na trati.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="developer" class="screen">
+<h2>🛠️ Developer</h2>
+<div class="grid">
+<div class="card">
+<h3>Vytvoriť linku</h3>
+<label>Číslo vlaky</label><input id="newLine" placeholder="napr. R 811">
+<label>Trasa</label><input id="newRoute" placeholder="napr. Bratislava → Banská Bystrica">
+<label>Čas začiatku vlaka</label><input id="newStartTime" type="time" value="15:00">
+<input id="newPlatform" placeholder="Koľaj (napr. 3)" />
+<button class="primary" onclick="addLine()">Pridať linku</button>
+</div>
+
+<div class="card">
+<h3>Pridať stanicu</h3>
+<label>Vlak</label><select id="devLine"></select>
+<label>Stanica (jazda - pobyt)</label>
+<input id="newStop" placeholder="napr. Victoria Station (2 - 1)">
+<p class="muted" style="font-size:13px;margin-top:8px">Formát: Názov stanice (minúty jazdy - minúty pobytu). Napr. Victoria Station (2 - 1).</p>
+<button class="primary" onclick="addStop()">Pridať stanicu</button>
+</div>
+</div>
+
+
+<div class="card" style="margin-top:18px">
+  <h3>Spustiť vlak</h3>
+  <p class="muted">Vyber linku, ktorú chce vodič práve jazdiť.</p>
+  <div class="row">
+    <select id="startTripLine"></select>
+    <button class="smallbtn" onclick="startTrip()">Spustiť vlak</button>
+  </div>
+  <div id="tripStatus" class="muted" style="margin-top:10px">Žiadny vlak nie je aktívny.</div>
+</div>
+
+<div class="card" style="margin-top:18px">
+<div class="between"><h3>Konfigurácia liniek</h3><span class="pill">Upraviteľné</span></div>
+<div id="devTable"></div>
+</div>
+</section>
+
+
+<section id="save" class="screen">
+<h2>⚙️ Nastavenia</h2>
+<div class="grid">
+  <div class="card">
+    <h3>Vzhľad aplikácie</h3>
+    <p class="muted">Režim môžeš kedykoľvek prepnúť.</p>
+    <div class="pay-options">
+      <button id="lightModeBtn" class="pay selected" onclick="setTheme('light')">☀️ Light mode</button>
+      <button id="darkModeBtn" class="pay" onclick="setTheme('dark')">🌙 Dark mode</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Uložiť údaje</h3>
+    <p class="muted">Uloží všetky vlaky, stanice, časy a aktívny vlak do tohto prehliadača.</p>
+    <button class="primary" onclick="saveData()">💾 Uložiť údaje</button>
+    <div id="saveStatus" class="muted" style="margin-top:12px">Zatiaľ neuložené ručne.</div>
+  </div>
+
+</div>
+</section>
+
+
+
+<section id="transactions" class="screen">
+  <div class="between">
+    <div>
+      <h2>🧾 Transakcie</h2>
+      <p class="muted">História uskutočnených platieb</p>
+    </div>
+    <button class="smallbtn danger" onclick="clearTransactions()">Vymazať históriu</button>
+  </div>
+  <div id="transactionList" class="transaction-list" style="margin-top:18px"></div>
+</section>
+
+</main>
+</div>
+</section>
+
+
+<div id="paymentTerminalOverlay" class="pay-terminal-overlay">
+  <div id="paymentTerminal" class="pay-terminal">
+    <div class="pay-terminal-top">
+      <div class="pay-terminal-brand">Platobný terminál</div>
+      <button class="pay-terminal-close" onclick="closePaymentTerminal()">×</button>
+    </div>
+    <div id="paymentTerminalBody" class="pay-terminal-body"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let data = {
+  "R 811": {
+    route:"Bratislava hl.st. → Banská Bystrica",
+    startTime:"14:05",
+    platform:"2",
+    stops:[
+      {name:"Bratislava hl.st.",arr:"",dep:"14:05"},
+      {name:"Trnava",arr:"14:41",dep:"14:43"},
+      {name:"Leopoldov",arr:"15:01",dep:"15:03"},
+      {name:"Nitra",arr:"15:36",dep:"15:39"},
+      {name:"Zvolen osobná stanica",arr:"17:01",dep:"17:05"},
+      {name:"Banská Bystrica",arr:"17:28",dep:""}
+    ]
+  },
+  "Os 6207": {
+    route:"Zvolen osobná stanica → Banská Bystrica",
+    startTime:"15:00",
+    platform:"1",
+    stops:[
+      {name:"Zvolen osobná stanica",arr:"",dep:"15:00"},
+      {name:"Sliač kúpele",arr:"15:11",dep:"15:12"},
+      {name:"Vlkanová",arr:"15:20",dep:"15:21"},
+      {name:"Radvaň",arr:"15:30",dep:"15:31"},
+      {name:"Banská Bystrica mesto",arr:"15:36",dep:"15:37"},
+      {name:"Banská Bystrica",arr:"15:41",dep:""}
+    ]
+  }
+};
+
+let currentStop = 0;
+let selectedPayment = "Hotovosť";
+let transactionHistory=[];
+try{ transactionHistory=JSON.parse(localStorage.getItem("transactionHistory")||"[]"); }catch(e){ transactionHistory=[]; }
+let activeTrip = null;
+let operationalAlerts = [];
+let liveTrainDelay = {};
+let boardDirectionTimer = null;
+let boardDirectionTick = 0;
+const VISIBLE_STOPS = 5;
+
+function login(){
+  const u=document.getElementById('user').value.trim(), p=document.getElementById('pass').value;
+  if((u==="vlak"&&p==="1234")||(u==="admin"&&p==="admin")){
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('driverName').textContent=u==="admin"?"Administrator":"Rušňovodič";
+    init(); toast("Prihlásenie úspešné");
+  } else toast("Nesprávne prihlasovacie údaje");
+}
+
+function logout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login').style.display='grid';
+}
+
+function init(){
+  loadUiZoom();
+  loadSavedData();
+  loadTheme();
+  loadVoiceSettings();
+  fillLineSelects();
+  renderStops();
+  renderDev();
+  renderTripStatus();
+  renderOperationalScreens();
+  fillAlertStations();
+  updateAnnouncementPreview();
+  updateDelay();
+  setInterval(updateDelay,1000);
+}
+
+document.querySelectorAll('.nav[data-screen]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+  document.getElementById(b.dataset.screen).classList.add('active');
+  renderOperationalScreens();
+}));
+
+document.getElementById('tariff').addEventListener('change',()=>updateAutomaticPrice());
+document.getElementById('payLine').addEventListener('change',syncStops);
+document.getElementById('alertTrain')?.addEventListener('change',()=>{fillAlertStations();updateAnnouncementPreview();});
+document.getElementById('routeSelect').addEventListener('change',()=>{
+  currentStop=0;
+  activeTrip=document.getElementById('routeSelect').value;
+  renderStops();
+  renderTripStatus();
+});
+
+function fillLineSelects(){
+  const ids=Object.keys(data);
+  ["payLine","routeSelect","devLine","startTripLine"].forEach(id=>{
+    const s=document.getElementById(id), old=s.value;
+    s.innerHTML='';
+    if(!ids.length){
+      const o=document.createElement('option');
+      o.value=''; o.textContent='Žiadny vlak'; s.appendChild(o);
+      return;
+    }
+    ids.forEach(k=>{
+      const o=document.createElement('option');
+      o.value=k; o.textContent=k+" – "+data[k].route; s.appendChild(o);
+    });
+    if(data[old]) s.value=old;
+  });
+  syncStops();
+  if(activeTrip && data[activeTrip]){
+    ["routeSelect","startTripLine"].forEach(id=>{const s=document.getElementById(id); if(s) s.value=activeTrip;});
+  }
+}
+
+function syncStops(){
+  const id=document.getElementById('payLine').value;
+  const s=document.getElementById('payStop');
+  const grid=document.getElementById('destinationGrid');
+  s.innerHTML='';
+  if(grid) grid.innerHTML='';
+
+  if(!id || !data[id]) {
+    updateAutomaticPrice();
+    return;
+  }
+
+  data[id].stops.forEach((x,i)=>{
+    if(i===0) return;
+    const name=x.name;
+    const o=document.createElement('option');
+    o.value=i; o.textContent=name; s.appendChild(o);
+
+    if(grid){
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='destination-tile';
+      btn.dataset.index=String(i);
+      btn.innerHTML=`<div class="destination-name">${name}</div><div class="destination-meta">${i} úsek${i===1?'':'y'}</div>`;
+      btn.onclick=()=>selectDestination(i,btn);
+      grid.appendChild(btn);
+    }
+  });
+
+  if(!s.options.length){
+    const o=document.createElement('option');
+    o.value=''; o.textContent='Žiadna cieľová stanica'; s.appendChild(o);
+  } else {
+    const first=grid?.querySelector('.destination-tile');
+    if(first) selectDestination(Number(first.dataset.index),first);
+  }
+  updateAutomaticPrice();
+}
+
+
+function selectDestination(index,button){
+  const s=document.getElementById('payStop');
+  if(!s) return;
+  s.value=String(index);
+  document.querySelectorAll('.destination-tile').forEach(x=>x.classList.remove('selected'));
+  if(button) button.classList.add('selected');
+  updateAutomaticPrice();
+}
+
+function updateAutomaticPrice(){
+  const stopSelect=document.getElementById('payStop');
+  const tariff=document.getElementById('tariff');
+  const priceEl=document.getElementById('price');
+  const info=document.getElementById('priceBreakdown');
+  if(!priceEl) return;
+
+  const segments=Math.max(0,Number(stopSelect?.value||0));
+
+  // Realistický jednoduchý tarif:
+  // prvé 2 úseky = 2,00 €, každé ďalšie 2 úseky +1,25 €.
+  const extraBlocks=Math.max(0,Math.ceil((segments-2)/2));
+  const base=2.00 + extraBlocks*1.25;
+  const multiplier=Number(tariff?.value||1);
+  const finalPrice=Math.max(0.50,Math.round(base*multiplier*100)/100);
+
+  priceEl.textContent=finalPrice.toFixed(2).replace('.',',');
+
+  if(info){
+    const tariffName=tariff?.selectedOptions?.[0]?.textContent?.split('–')[0]?.trim()||'Tarifa';
+    info.textContent=segments
+      ? `${segments} úsek${segments===1?'':'y'} · základ ${base.toFixed(2).replace('.',',')} € · ${tariffName}`
+      : 'Vyber cieľovú zastávku/stanicu.';
+  }
+}
+
+function choosePay(el,name){
+  document.querySelectorAll('.pay').forEach(x=>x.classList.remove('selected'));
+  el.classList.add('selected'); selectedPayment=name;
+}
+
+function sellTicket(){
+  const s=document.getElementById('payStop');
+  if(!s || !s.value) return toast("Najprv vyber cieľovú zastávku");
+  openPaymentTerminal();
+}
+
+function getRouteId(){ const v=document.getElementById('routeSelect').value; return (v&&data[v])?v:(Object.keys(data)[0]||null); }
+function timeToMinutes(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
+function minutesToTime(total){
+  total=((total%1440)+1440)%1440;
+  return String(Math.floor(total/60)).padStart(2,'0')+":"+String(total%60).padStart(2,'0');
+}
+
+function minutesToClock(total){
+  total=((total%1440)+1440)%1440;
+  const h=Math.floor(total/60);
+  const m=total%60;
+  return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+}
+
+function recalculateTrainTimes(id){
+  const r=data[id];
+  if(!r) return;
+  let cursor=timeToMinutes(r.startTime);
+
+  r.stops.forEach((s,i)=>{
+    const travel=Number(s.travel ?? 0);
+    const dwell=Number(s.dwell ?? 0);
+
+    cursor+=travel;
+    s.arr=minutesToClock(cursor);
+    cursor+=dwell;
+    s.dep=minutesToClock(cursor);
+  });
+}
+
+function recalculateAllTrainTimes(){
+  Object.keys(data).forEach(recalculateTrainTimes);
+}
+
+
+function migrateStopsToMinuteModel(){
+  Object.entries(data).forEach(([id,r])=>{
+    let prev=timeToMinutes(r.startTime);
+    r.stops.forEach((s,i)=>{
+      if(s.travel===undefined || s.dwell===undefined){
+        const arr=s.arr ? timeToMinutes(s.arr) : prev;
+        const dep=s.dep ? timeToMinutes(s.dep) : arr;
+        let travel=arr-prev;
+        if(travel<0) travel+=1440;
+        let dwell=dep-arr;
+        if(dwell<0) dwell+=1440;
+        s.travel=Math.max(0,travel);
+        s.dwell=Math.max(0,dwell);
+      }
+      prev=timeToMinutes(s.dep||r.startTime);
+    });
+    recalculateTrainTimes(id);
+  });
+}
+
+function getArrivalTimes(id){
+  const route=data[id];
+  return route.stops.map((s,i)=>s.arr || (i===0 ? (s.dep||route.startTime) : (s.dep||"—")));
+}
+function getDepartureTimes(id){
+  const route=data[id];
+  return route.stops.map((s,i)=>s.dep || (i===0 ? route.startTime : "—"));
+}
+
+function renderStops(){
+  const id=getRouteId();
+  if(!id || !data[id]){
+    document.getElementById('homeLineBadge').textContent='—';
+    document.getElementById('homeFinal').textContent='Žiadny vlak';
+    document.getElementById('homeNext').textContent='—';
+    document.getElementById('homeDelay').textContent='Na čas';
+    document.getElementById('stopList').innerHTML='<div class="muted" style="padding:18px">Nie je vytvorený žiadny vlak.</div>';
+    document.getElementById('visibleStopCount').textContent='0 staníc';
+    document.getElementById('leftArrow').disabled=true;
+    document.getElementById('rightArrow').disabled=true;
+    document.getElementById('finishTripWrap').style.display='none';
+    const box=document.getElementById('delayBox');
+    box.textContent='00:00';
+    box.className='delay';
+    return;
+  }
+
+  const r=data[id], arr=r.stops;
+  currentStop=Math.max(0,Math.min(currentStop,Math.max(0,arr.length-1)));
+
+  document.getElementById('homeLineBadge').textContent=id;
+  document.getElementById('homeFinal').textContent=arr.length?arr[arr.length-1].name:"—";
+  document.getElementById('homeNext').textContent=arr[currentStop]?.name || "—";
+
+  const end=Math.min(arr.length,currentStop+VISIBLE_STOPS);
+  let out='';
+
+  for(let i=currentStop;i<end;i++){
+    const active=i===currentStop;
+    const isLast=i===arr.length-1;
+    const badge=active?'AKTUÁLNA':(isLast?'KONEČNÁ':'NASLEDUJE');
+    const st=arr[i];
+
+    out+=`<div class="stop-real ${active?'active':''}">
+      <div class="time-main">${st.dep||'—'}</div>
+      <div class="route-axis"><div class="route-dot"></div></div>
+      <div class="stop-main">
+        <div class="stop-name-real">${st.name}</div>
+        <div class="stop-sub">${active?'Pripravené na odchod':'Plánovaný odchod'}</div>
+      </div>
+      <div class="stop-badge">${badge}</div>
+    </div>`;
+  }
+
+  document.getElementById('stopList').innerHTML=out || '<div class="muted" style="padding:18px">Tento vlak zatiaľ nemá žiadne stanice.</div>';
+  document.getElementById('visibleStopCount').textContent=(end-currentStop)+' / '+arr.length+' staníc';
+
+  document.getElementById('leftArrow').disabled=currentStop<=0 || !arr.length;
+  document.getElementById('rightArrow').disabled=currentStop>=arr.length-1 || !arr.length;
+  document.getElementById('finishTripWrap').style.display=(arr.length>0 && activeTrip===id)?'block':'none';
+
+  updateDelay();
+}
+
+function nextStop(){
+  const id=getRouteId();
+  if(!id || !data[id]) return toast("Nie je vytvorená žiadna vlak");
+  const arr=data[id].stops;
+  if(currentStop<arr.length-1){
+    currentStop++;
+    localStorage.setItem("zsskTrain_currentStop",String(currentStop));
+    renderStops();
+  syncBoardStationToCurrentStop();
+    toast("Ďalšia stanica aktivovaná");
+  } else toast("Koniec trasy");
+}
+
+function previousStop(){
+  if(currentStop>0){
+    currentStop--;
+    localStorage.setItem("zsskTrain_currentStop",String(currentStop));
+    renderStops();
+    toast("Vrátená predchádzajúca stanica");
+  } else toast("Ste na začiatku trasy");
+}
+
+function updateDelay(){
+  const id=getRouteId();
+  const box=document.getElementById('delayBox');
+
+  // Odchýlka sa počíta iba počas aktívne spusteného spoja.
+  if(!id || !data[id] || !data[id].stops.length || activeTrip!==id){
+    if(id) liveTrainDelay[id]=0;
+    box.textContent='00:00';
+    box.classList.remove('late','early');
+    box.classList.add('delay');
+    document.getElementById('homeDelay').textContent='Na čas';
+    return;
+  }
+
+  const st=data[id].stops[currentStop];
+  const planned=st?.arr || st?.dep || data[id].startTime;
+  const sched=timeToMinutes(planned);
+  const now=new Date();
+  let diff=(now.getHours()*60+now.getMinutes()-sched)*60+now.getSeconds();
+
+  if(diff>43200) diff-=86400;
+  if(diff<-43200) diff+=86400;
+
+  const late = diff >= 60;       // od +01:01 je meškanie
+  const neutral = diff >= 0 && diff < 60;
+  const early = diff < 0;
+
+  const abs=Math.abs(diff);
+  const mm=Math.floor(abs/60);
+  const ss=abs%60;
+
+  box.classList.remove('late','early');
+  box.classList.add('delay');
+  // Aktuálna časová odchýlka sa automaticky premieta do Odchodovej tabule
+  // a Prevádzkového prehľadu. Manuálne mimoriadne stavy ostávajú zachované.
+  if(late){
+    liveTrainDelay[id]=Math.max(1,Math.floor(diff/60));
+  }else{
+    liveTrainDelay[id]=0;
+  }
+  if(typeof renderOperationalOverview==="function") renderOperationalOverview();
+  if(typeof renderDepartureBoard==="function" && document.getElementById("departureBoard")?.classList.contains("active")) renderDepartureBoard();
+
+
+  // Aj v neutrále sa odchýlka stále zobrazuje.
+  if(neutral){
+    box.textContent='+'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+    document.getElementById('homeDelay').textContent='Na čas';
+    return;
+  }
+
+  if(late){
+    box.textContent='+'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+    box.classList.add('late');
+    document.getElementById('homeDelay').textContent='Meškanie '+mm+' min';
+  }else if(early){
+    box.textContent='-'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+    box.classList.add('early');
+    document.getElementById('homeDelay').textContent='V predstihu '+mm+' min';
+  }
+}
+
+function editPlatform(id,value){
+  if(!data[id]) return;
+  data[id].platform=(value||"").trim();
+  autoSave();
+  if(typeof renderOperationalScreens==="function") renderOperationalScreens();
+  toast("Koľaj uložená");
+}
+
+function addLine(){
+  const id=document.getElementById('newLine').value.trim();
+  const route=document.getElementById('newRoute').value.trim();
+  const startTime=document.getElementById('newStartTime').value;
+  const platform=(document.getElementById("newPlatform")?.value||"").trim();
+  if(!id||!route||!startTime) return document.getElementById("newPlatform").value="";
+  toast("Vyplň číslo vlaky, trasu a čas začiatku");
+  if(data[id]) return toast("Tento vlak už existuje");
+  data[id]={ platform:platform,route,startTime,stops:[]};
+  fillLineSelects(); renderDev(); autoSave(); toast("Vlak "+id+" vytvorená");
+}
+
+function parseStop(raw){
+  const m=raw.trim().match(/^(.*?)\s*\((\d+)\)\s*$/);
+  if(!m) return null;
+  return {name:m[1].trim(), minutes:Number(m[2])};
+}
+
+
+function parseStationSchedule(value){
+  const m=value.trim().match(/^(.*?)\s*\(\s*(\d+)\s*-\s*(\d+)\s*\)$/);
+  if(!m) return null;
+  const name=m[1].trim();
+  const travel=Number(m[2]);
+  const dwell=Number(m[3]);
+  if(!name || !Number.isFinite(travel) || !Number.isFinite(dwell) || travel<0 || dwell<0) return null;
+  return {name,travel,dwell};
+}
+
+function addStop(){
+  const id=document.getElementById('devLine').value;
+  if(!id || !data[id]) return toast("Najprv vytvor vlak");
+
+  const raw=document.getElementById('newStop').value;
+  const parsed=parseStationSchedule(raw);
+  if(!parsed) return toast("Použi formát: Victoria Station (2 - 1)");
+
+  data[id].stops.push(parsed);
+  recalculateTrainTimes(id);
+
+  document.getElementById('newStop').value='';
+
+  renderDev();
+  syncStops();
+  renderStops();
+  renderOperationalScreens();
+  autoSave();
+  toast("Stanica pridaná");
+}
+
+function editLineNumber(oldId){
+  if(!data[oldId]) return;
+  const newId=prompt("Nové číslo vlaky:",oldId);
+  if(newId===null) return;
+  const id=newId.trim();
+  if(!id) return toast("Číslo vlaky nemôže byť prázdne");
+  if(id===oldId) return toast("Číslo vlaky zostalo nezmenené");
+  if(data[id]) return toast("Vlak s týmto číslom už existuje");
+
+  const updated={};
+  Object.keys(data).forEach(key=>{ updated[key===oldId?id:key]=data[key]; });
+  data=updated;
+
+  if(activeTrip===oldId){
+    activeTrip=id;
+    localStorage.setItem("zsskTrain_activeTrip",id);
+  }
+
+  fillLineSelects();
+  ["routeSelect","payLine","devLine","startTripLine"].forEach(selId=>{
+    const s=document.getElementById(selId);
+    if(s && data[id]) s.value=id;
+  });
+  syncStops();
+  renderDev();
+  renderStops();
+  renderTripStatus();
+  autoSave();
+  toast("Číslo vlaky bolo zmenené z "+oldId+" na "+id);
+}
+
+function editStartTime(id){
+  const v=prompt("Nový čas začiatku vlaka (HH:MM):",data[id].startTime);
+  if(v===null) return;
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) return toast("Použi formát HH:MM");
+  data[id].startTime=v;
+  recalculateTrainTimes(id);
+  renderDev(); renderStops(); autoSave(); toast("Čas vlaka zmenený");
+}
+
+function editStop(id,index){
+  const old=data[id].stops[index];
+  const raw=prompt("Stanica (minúty jazdy - minúty pobytu):",`${old.name} (${old.travel||0} - ${old.dwell||0})`);
+  if(raw===null) return;
+
+  const parsed=parseStationSchedule(raw);
+  if(!parsed) return toast("Použi formát: Victoria Station (2 - 1)");
+
+  data[id].stops[index]={...old,...parsed};
+  recalculateTrainTimes(id);
+
+  renderDev();
+  syncStops();
+  renderStops();
+  renderOperationalScreens();
+  autoSave();
+  toast("Stanica upravená");
+}
+
+function deleteStop(id,index){
+  if(!confirm("Naozaj vymazať stanicu „"+data[id].stops[index][0]+"“?")) return;
+  data[id].stops.splice(index,1);
+  currentStop=Math.min(currentStop,Math.max(0,data[id].stops.length-1));
+  renderDev(); syncStops(); renderStops(); autoSave(); renderOperationalScreens(); toast("Stanica vymazaná");
+}
+
+function deleteLine(id){
+  if(!data[id]) return;
+  if(!confirm("Naozaj vymazať linku "+id+"?")) return;
+  delete data[id];
+  if(activeTrip===id) activeTrip=null;
+  currentStop=0;
+  localStorage.setItem("zsskTrain_activeTrip","");
+  localStorage.setItem("zsskTrain_currentStop","0");
+  fillLineSelects();
+  renderDev();
+  renderStops();
+  renderTripStatus();
+  autoSave();
+  toast("Vlak vymazaný");
+}
+
+function renderDev(){
+  let out='<table><tr><th>Vlak</th><th>Trasa</th><th>Koľaj</th><th>Začiatok</th><th>Stanice</th><th>Akcie</th></tr>';
+
+  Object.entries(data).forEach(([id,v])=>{
+    const stops=v.stops.map((s,i)=>
+      `<div style="margin:6px 0">
+        <button class="smallbtn" onclick="editStop('${id}',${i})">${s.name} (${s.travel||0} - ${s.dwell||0})</button>
+        <button class="smallbtn danger" onclick="deleteStop('${id}',${i})">✕</button>
+      </div>`).join('') || '—';
+
+    out+=`<tr>
+      <td><button class="smallbtn" onclick="editLineNumber('${id}')"><b>${id}</b> ✏️</button></td>
+      <td>${v.route}</td>
+      <td><input value="${v.platform||''}" placeholder="—" onchange="editPlatform('${id}',this.value)" style="width:90px"></td>
+      <td><button class="smallbtn" onclick="editStartTime('${id}')">${v.startTime}</button></td>
+      <td>${stops}</td>
+      <td><button class="smallbtn danger" onclick="deleteLine('${id}')">Vymazať vlak</button></td>
+    </tr>`;
+  });
+
+  if(!Object.keys(data).length){
+    out+='<tr><td colspan="6" class="muted">Zatiaľ nie je vytvorený žiadny vlak.</td></tr>';
+  }
+
+  document.getElementById('devTable').innerHTML=out+'</table>';
+}
+
+
+
+
+function getTrainOperationalState(id){
+  const latest=operationalAlerts
+    .filter(a=>a.train===id)
+    .sort((a,b)=>(b.time||0)-(a.time||0))[0];
+
+  let status=latest?.status||"Včas";
+  let delay=Number(latest?.delay||0);
+  const live=Number(liveTrainDelay[id]||0);
+  const special=["Nehoda","Zrušený","Odklonený","Mimoriadne zastavenie","Náhradná doprava"];
+
+  if(live>0){
+    delay=Math.max(delay,live);
+    if(!special.includes(status)) status="Mešká";
+  }else if(status==="Mešká" && delay<=0){
+    status="Včas";
+  }
+
+  return {status,delay,text:latest?.text||""};
+}
+
+function statusClass(status){
+  if(status==="Mešká" || status==="Zrušený") return "red";
+  if(status==="Včas") return "green";
+  if(status==="Nehoda" || status==="Mimoriadne zastavenie") return "orange";
+  return "blue";
+}
+
+function renderOperationalScreens(){
+  renderOperationalOverview();
+  renderTimetable();
+  fillBoardStations();
+  renderDepartureBoard();
+  fillAlertTrains();
+  renderAlerts();
+}
+
+function renderOperationalOverview(){
+  const stats=document.getElementById("opsStats");
+  const table=document.getElementById("opsTable");
+  if(!stats || !table) return;
+
+  const ids=Object.keys(data);
+  const delayed=ids.filter(id=>getTrainOperationalState(id).status==="Mešká").length;
+  const incidents=ids.filter(id=>["Nehoda","Zrušený","Mimoriadne zastavenie","Náhradná doprava"].includes(getTrainOperationalState(id).status)).length;
+
+  stats.innerHTML=`
+    <div class="ops-card"><div class="muted">Vlaky v systéme</div><div class="num">${ids.length}</div></div>
+    <div class="ops-card"><div class="muted">Aktívny vlak</div><div class="num" style="font-size:22px">${activeTrip||"—"}</div></div>
+    <div class="ops-card"><div class="muted">Meškajúce</div><div class="num">${delayed}</div></div>
+    <div class="ops-card"><div class="muted">Mimoriadnosti</div><div class="num">${incidents}</div></div>`;
+
+  if(!ids.length){
+    table.innerHTML='<div class="muted">V systéme nie sú žiadne vlaky.</div>';
+    return;
+  }
+
+  let out='<table><tr><th>Vlak</th><th>Relácia</th><th>Odchod</th><th>Konečná stanica</th><th>Stav</th><th>Meškanie</th></tr>';
+  ids.forEach(id=>{
+    const r=data[id], state=getTrainOperationalState(id);
+    const final=r.stops.length?r.stops[r.stops.length-1].name:"—";
+    out+=`<tr>
+      <td><b>${id}</b></td>
+      <td>${r.route}</td>
+      <td>${r.startTime}</td>
+      <td>${final}</td>
+      <td><span class="status-pill ${statusClass(state.status)}">${state.status}</span></td>
+      <td>${state.delay>0?`+${state.delay} min`:"—"}</td>
+    </tr>`;
+  });
+  table.innerHTML=out+'</table>';
+}
+
+function renderTimetable(){
+  const el=document.getElementById("timetableContent");
+  if(!el) return;
+  const ids=Object.keys(data);
+  if(!ids.length){
+    el.innerHTML='<div class="card"><div class="muted">Nie je vytvorený žiadny vlak.</div></div>';
+    return;
+  }
+
+  el.innerHTML=ids.map(id=>{
+    const r=data[id];
+    let rows='';
+    r.stops.forEach((s,i)=>{
+      rows+=`<tr>
+        <td>${i+1}</td>
+        <td><b>${s.name}</b></td>
+        <td>${s.arr||'—'}</td>
+        <td>${s.dep||'—'}</td>
+      </tr>`;
+    });
+
+    return `<div class="card" style="margin-bottom:16px">
+      <div class="between">
+        <div><span class="pill">${id}</span><h3 style="margin-top:10px">${r.route}</h3></div>
+        <b>${r.startTime}</b>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <tr><th>#</th><th>Stanica</th><th>Príchod</th><th>Odchod</th></tr>
+          ${rows}
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fillBoardStations(){
+  const s=document.getElementById("boardStation");
+  if(!s) return;
+  const old=s.value;
+  const names=[];
+  Object.values(data).forEach(r=>r.stops.forEach(st=>{if(!names.includes(st.name)) names.push(st.name);}));
+  s.innerHTML='';
+  if(!names.length){
+    const o=document.createElement("option"); o.value=""; o.textContent="Žiadna stanica"; s.appendChild(o); return;
+  }
+  names.forEach(name=>{const o=document.createElement("option");o.value=name;o.textContent=name;s.appendChild(o);});
+  if(names.includes(old)) s.value=old;
+  syncBoardStationToCurrentStop();
+}
+
+function syncBoardStationToCurrentStop(){
+  const sel=document.getElementById("boardStation");
+  if(!sel) return;
+
+  const id=getRouteId();
+  if(!id || !data[id] || !data[id].stops.length) return;
+
+  const idx=Math.max(0,Math.min(currentStop,data[id].stops.length-1));
+  const station=data[id].stops[idx].name;
+
+  // Ak je stanica dostupná v zozname Odchodovej tabule, automaticky ju zvoľ.
+  const has=[...sel.options].some(o=>o.value===station);
+  if(has){
+    sel.value=station;
+    renderDepartureBoard();
+  }
+}
+
+function renderDepartureBoard(){
+  const el=document.getElementById("boardContent");
+  const sel=document.getElementById("boardStation");
+  if(!el || !sel) return;
+
+  const station=sel.value;
+
+  if(boardDirectionTimer){
+    clearInterval(boardDirectionTimer);
+    boardDirectionTimer=null;
+  }
+
+  if(!station){
+    el.innerHTML='<div class="muted">Nie je dostupná žiadna stanica.</div>';
+    return;
+  }
+
+  const rows=[];
+  Object.entries(data).forEach(([id,r])=>{
+    const idx=r.stops.findIndex(s=>s.name===station);
+    if(idx<0 || idx===r.stops.length-1) return;
+
+    
+    const state=getTrainOperationalState(id);
+    const directions=r.stops.slice(idx+1).map(s=>s.name);
+
+    rows.push({
+      id,
+      time:(r.stops[idx].dep||r.stops[idx].arr||r.startTime),
+      directions,
+      platform:r.platform||"—",
+      status:state.status,
+      delay:state.delay
+    });
+  });
+
+  rows.sort((a,b)=>a.time.localeCompare(b.time));
+
+  if(!rows.length){
+    el.innerHTML='<div class="muted">Z tejto stanice momentálne nie sú evidované žiadne odchody.</div>';
+    return;
+  }
+
+  el.innerHTML=`<div class="board-head"><span>Vlak</span><span>Odchod</span><span>Smer</span><span>Koľaj</span><span>Stav</span><span>Meškanie</span></div>`+
+    rows.map((x,rowIndex)=>`<div class="board-row">
+      <span class="board-train">${x.id}</span>
+      <span class="board-time">${x.time}</span>
+      <span class="board-direction" data-row="${rowIndex}"><b>${x.directions[0]||"—"}</b></span>
+      <span>${x.platform}</span>
+      <span><span class="status-pill ${statusClass(x.status)}">${x.status}</span></span>
+      <span class="${x.delay>0?'board-time':''}">${x.delay>0?`+${x.delay} min`:"-"}</span>
+    </div>`).join('');
+
+  const indices=rows.map(()=>0);
+
+  boardDirectionTimer=setInterval(()=>{
+    const nodes=document.querySelectorAll(".board-direction");
+    nodes.forEach(node=>{
+      const rowIndex=Number(node.dataset.row);
+      const dirs=rows[rowIndex]?.directions||[];
+      if(!dirs.length) return;
+      indices[rowIndex]=(indices[rowIndex]+1)%dirs.length;
+      node.innerHTML="<b>"+dirs[indices[rowIndex]]+"</b>";
+    });
+  },2000);
+}
+
+function fillAlertTrains(){
+  const s=document.getElementById("alertTrain");
+  if(!s) return;
+  const old=s.value;
+  s.innerHTML='';
+  const ids=Object.keys(data);
+  if(!ids.length){
+    const o=document.createElement("option");o.value="";o.textContent="Žiadny vlak";s.appendChild(o);return;
+  }
+  ids.forEach(id=>{const o=document.createElement("option");o.value=id;o.textContent=id+" – "+data[id].route;s.appendChild(o);});
+  if(data[old]) s.value=old;
+  fillAlertStations();
+}
+
+
+let voiceSystemEnabled=false;
+let voiceSettings={rate:0.90,pitch:1.00,volume:1};
+let voiceAudioContext=null;
+
+function loadVoiceSettings(){
+  voiceSystemEnabled=localStorage.getItem("zsskVoice_enabled")==="1";
+  try{voiceSettings={...voiceSettings,...JSON.parse(localStorage.getItem("zsskVoice_settings")||"{}")};}catch(e){}
+  const r=document.getElementById("voiceRate"),p=document.getElementById("voicePitch"),v=document.getElementById("voiceVolume");
+  if(r) r.value=voiceSettings.rate;if(p) p.value=voiceSettings.pitch;if(v) v.value=voiceSettings.volume;
+  renderVoiceSettings();
+}
+function saveVoiceSettings(){
+  voiceSettings.rate=Number(document.getElementById("voiceRate")?.value||0.90);
+  voiceSettings.pitch=Number(document.getElementById("voicePitch")?.value||1.00);
+  voiceSettings.volume=Number(document.getElementById("voiceVolume")?.value||1);
+  localStorage.setItem("zsskVoice_settings",JSON.stringify(voiceSettings));renderVoiceSettings();
+}
+function renderVoiceSettings(){
+  const b=document.getElementById("voiceToggleBtn"),i=document.getElementById("voiceIndicator");
+  if(b) b.textContent=voiceSystemEnabled?"Vypnúť":"Zapnúť";
+  if(i){i.classList.toggle("on",voiceSystemEnabled);i.querySelector("span:last-child").textContent=voiceSystemEnabled?"Zapnutý":"Vypnutý";}
+  const rv=document.getElementById("voiceRateValue"),pv=document.getElementById("voicePitchValue"),vv=document.getElementById("voiceVolumeValue");
+  if(rv)rv.textContent=Number(voiceSettings.rate).toFixed(2)+"×";
+  if(pv)pv.textContent=Number(voiceSettings.pitch).toFixed(2)+"×";
+  if(vv)vv.textContent=Math.round(voiceSettings.volume*100)+" %";
+}
+function toggleVoiceSystem(){
+  voiceSystemEnabled=!voiceSystemEnabled;
+  localStorage.setItem("zsskVoice_enabled",voiceSystemEnabled?"1":"0");
+  renderVoiceSettings();
+  // používateľské kliknutie zároveň odomkne zvuk na iOS/Safari
+  try{const C=window.AudioContext||window.webkitAudioContext;if(C){voiceAudioContext=voiceAudioContext||new C();voiceAudioContext.resume?.();}}catch(e){}
+  toast("Hlasový systém "+(voiceSystemEnabled?"zapnutý":"vypnutý"));
+}
+function stopAnnouncement(){if("speechSynthesis" in window) speechSynthesis.cancel();}
+function stationChime(kind="start"){
+  return new Promise(resolve=>{
+    try{
+      const C=window.AudioContext||window.webkitAudioContext;if(!C)return resolve();
+      const ctx=voiceAudioContext||new C();voiceAudioContext=ctx;ctx.resume?.();
+      const now=ctx.currentTime+.03;
+      // Vlastná, neutrálna staničná zvonkohra – nie originálna nahrávka ZSSK.
+      const notes=kind==="end"
+        ? [{f:880,t:0,d:.24,g:.10},{f:659.25,t:.22,d:.42,g:.085}]
+        : [{f:659.25,t:0,d:.34,g:.09},{f:783.99,t:.24,d:.34,g:.10},{f:987.77,t:.48,d:.48,g:.085}];
+      notes.forEach(n=>{
+        const o=ctx.createOscillator(),g=ctx.createGain();
+        o.type="sine";o.frequency.setValueAtTime(n.f,now+n.t);
+        g.gain.setValueAtTime(.0001,now+n.t);
+        g.gain.exponentialRampToValueAtTime(Math.max(.001,n.g*voiceSettings.volume),now+n.t+.035);
+        g.gain.exponentialRampToValueAtTime(.0001,now+n.t+n.d);
+        o.connect(g);g.connect(ctx.destination);o.start(now+n.t);o.stop(now+n.t+n.d+.03);
+      });
+      setTimeout(resolve,kind==="end"?720:1150);
+    }catch(e){resolve();}
+  });
+}
+function bestSlovakVoice(){
+  const voices=speechSynthesis.getVoices();
+  return voices.find(v=>/^sk[-_]/i.test(v.lang)&&/premium|enhanced|natural/i.test(v.name))
+      || voices.find(v=>/^sk[-_]/i.test(v.lang))
+      || voices.find(v=>/slovak/i.test(v.name))
+      || null;
+}
+function prepareSpeechText(text){
+  return String(text||"")
+    .replace(/\bR\s*(\d+)/gi,"rýchlik $1")
+    .replace(/\bOs\s*(\d+)/gi,"osobný vlak $1")
+    .replace(/\bEx\s*(\d+)/gi,"expres $1")
+    .replace(/\bIC\s*(\d+)/gi,"InterCity $1")
+    .replace(/\bEC\s*(\d+)/gi,"EuroCity $1")
+    .replace(/\b(\d{1,2}):(\d{2})\b/g,"$1 hodín $2 minút")
+    .replace(/, /g,",  ")
+    .replace(/\. /g,".   ");
+}
+async function speakSlovak(text,force=false){
+  if(!force&&!voiceSystemEnabled)return;
+  if(!("speechSynthesis" in window))return toast("Toto zariadenie nepodporuje hlasové čítanie");
+  speechSynthesis.cancel();
+  await stationChime("start");
+  // Krátka pauza po úvodnej zvonkohre pôsobí prirodzenejšie ako staničný rozhlas.
+  await new Promise(r=>setTimeout(r,260));
+  const u=new SpeechSynthesisUtterance(prepareSpeechText(text));
+  const v=bestSlovakVoice();if(v)u.voice=v;
+  u.lang="sk-SK";u.rate=voiceSettings.rate;u.pitch=voiceSettings.pitch;u.volume=voiceSettings.volume;
+  let finished=false;
+  const finish=async()=>{
+    if(finished)return;
+    finished=true;
+    // Záverečná zvonkohra sa spustí až po skutočnom ukončení reči.
+    await new Promise(r=>setTimeout(r,320));
+    await stationChime("end");
+  };
+  u.onend=finish;
+  u.onerror=(e)=>{if(e && e.error!=="canceled" && e.error!=="interrupted") finish();};
+  speechSynthesis.speak(u);
+}
+function fillAlertStations(){
+  const train=document.getElementById("alertTrain")?.value,s=document.getElementById("alertStation");if(!s)return;s.innerHTML="";const r=data[train];if(!r)return;
+  r.stops.forEach((st,i)=>{const o=document.createElement("option");o.value=i;o.textContent=st.name;s.appendChild(o);});
+  const idx=(activeTrip===train)?Math.min(currentStop,r.stops.length-1):0;if(r.stops[idx])s.value=String(idx);
+  const p=document.getElementById("alertPlatform");if(p&&!p.value)p.value=r.platform||"";
+}
+function trainSpokenName(id){return id.replace(/^R\s+/i,"rýchlik ").replace(/^Os\s+/i,"osobný vlak ").replace(/^Ex\s+/i,"expres ").replace(/^IC\s+/i,"InterCity ");}
+function nextStationsText(train,index){
+  const arr=(data[train]?.stops||[]).slice(Number(index)+1).map(x=>x.name);if(!arr.length)return "";if(arr.length===1)return arr[0];return arr.slice(0,-1).join(", ")+" a "+arr[arr.length-1];
+}
+function inferAnnouncementType(status,text){const t=(text||"").toLowerCase();if(status==="Mešká"||t.includes("mešk"))return"delay";if(status==="Nehoda"||t.includes("nehod")||t.includes("mimoriad"))return"incident";if(status==="Zrušený"||t.includes("zruš"))return"cancel";if(t.includes("príchod")||t.includes("prichádza"))return"arrival";if(t.includes("odchod")||t.includes("odchádza"))return"departure";if(t.includes("koľaj")||t.includes("nástupi"))return"platform";return"departure";}
+function buildAnnouncement(){
+  const train=document.getElementById("alertTrain")?.value;
+  if(!train||!data[train])return"";
+  const r=data[train];
+  const idx=Number(document.getElementById("alertStation")?.value||0);
+  const st=r.stops[idx];
+  if(!st)return"";
+
+  const delay=Math.max(0,Number(document.getElementById("alertDelay")?.value)||0);
+  const extra=document.getElementById("alertText")?.value.trim()||"";
+  const platform=document.getElementById("alertPlatform")?.value.trim()||r.platform||"";
+  const type=document.getElementById("alertType")?.value||"delay";
+  const name=trainSpokenName(train);
+  const origin=r.stops[0]?.name||"";
+  const next=nextStationsText(train,idx);
+  // Pravidelný príchod do stanice, na ktorej sa hlásenie prehráva.
+  const regularArrival=st.arr||st.dep||r.startTime||"";
+  let msg="";
+
+  if(type==="delay"){
+    msg=`Upozornenie na meškanie vlaku. ${name} zo smeru ${origin}, pravidelný príchod ${regularArrival}`;
+    if(next) msg+=`, pokračujúci v smere ${next}`;
+    msg+=`, bude meškať približne ${delay||1} minút. Za vzniknuté meškanie sa ospravedlňujeme.`;
+  }else if(type==="arrival"){
+    msg=`Upozornenie. ${platform?`Na nástupište, koľaj číslo ${platform}, `:""}prichádza ${name} zo smeru ${origin}.`;
+    if(next) msg+=` Vlak pokračuje v smere ${next}.`;
+    msg+=` Prosíme cestujúcich, aby pri príchode vlaku dbali na svoju bezpečnosť.`;
+  }else if(type==="departure"){
+    msg=`Upozornenie. ${name}${platform?`, z koľaje číslo ${platform}`:""}, je pripravený na odchod.`;
+    if(next) msg+=` Vlak pokračuje v smere ${next}.`;
+  }else if(type==="incident"){
+    msg=`Upozornenie pre cestujúcich. Z dôvodu nehody na trati je doprava vlaku ${name}, zo smeru ${origin}`;
+    if(next) msg+=`, pokračujúceho v smere ${next}`;
+    msg+=`, obmedzená.`;
+    if(delay>0) msg+=` Vlak bude meškať približne ${delay} minút.`;
+    msg+=` Prosíme cestujúcich, aby venovali pozornosť ďalším hláseniam. Za vzniknuté komplikácie sa ospravedlňujeme.`;
+  }else if(type==="cancel"){
+    msg=`Upozornenie pre cestujúcich. ${name}, zo smeru ${origin}, s pravidelným príchodom ${regularArrival}`;
+    if(next) msg+=`, pokračujúci v smere ${next}`;
+    msg+=`, je zrušený. Za vzniknuté komplikácie sa ospravedlňujeme.`;
+  }
+  if(extra) msg+=` ${extra}`;
+  return msg;
+}
+function updateAnnouncementPreview(){const el=document.getElementById("announcementPreview");if(el)el.textContent=buildAnnouncement()||"—";}
+function testVoiceSystem(){const t=buildAnnouncement()||"Skúška staničného hlasového systému. Hlasový systém je pripravený.";speakSlovak(t,true);}
+
+function addOperationalAlert(){
+  const train=document.getElementById("alertTrain").value;
+  if(!train || !data[train]) return toast("Najprv vytvor vlak");
+  const status=document.getElementById("alertStatus").value;
+  const delay=Math.max(0,Number(document.getElementById("alertDelay").value)||0);
+  const text=document.getElementById("alertText").value.trim();
+  const now=new Date();
+  const announcement=buildAnnouncement();
+  operationalAlerts.push({
+    id:Date.now(),train,status,delay,text,announcement,
+    time:now.toLocaleTimeString("sk-SK",{hour:"2-digit",minute:"2-digit"})
+  });
+  localStorage.setItem("zsskTrain_alerts",JSON.stringify(operationalAlerts));
+  document.getElementById("alertText").value="";
+  renderOperationalScreens();
+  if(announcement) speakSlovak(announcement);
+  toast("Prevádzkové hlásenie bolo publikované"+(voiceSystemEnabled?" a odvysielané":""));
+}
+
+function deleteOperationalAlert(id){
+  operationalAlerts=operationalAlerts.filter(a=>a.id!==id);
+  localStorage.setItem("zsskTrain_alerts",JSON.stringify(operationalAlerts));
+  renderOperationalScreens();
+  toast("Hlásenie odstránené");
+}
+
+function renderAlerts(){
+  const el=document.getElementById("alertsList");
+  if(!el) return;
+  if(!operationalAlerts.length){
+    el.innerHTML='<div class="muted">Zatiaľ nie sú žiadne prevádzkové hlásenia.</div>';
+    return;
+  }
+  el.innerHTML=[...operationalAlerts].reverse().map(a=>`
+    <div class="alert-item">
+      <div class="alert-meta">
+        <div><b>${a.train}</b> <span class="status-pill ${statusClass(a.status)}">${a.status}</span></div>
+        <span class="muted">${a.time}</span>
+      </div>
+      ${a.delay>0?`<div><b>Meškanie: +${a.delay} min</b></div>`:""}
+      <div style="margin-top:6px">${a.text||"Bez textu hlásenia."}</div>
+      ${a.announcement?`<button class="smallbtn" style="margin-top:9px" onclick='speakSlovak(${JSON.stringify(a.announcement)},true)'>🔊 Prehrať</button>`:""}
+      <button class="smallbtn danger" style="margin-top:9px" onclick="deleteOperationalAlert(${a.id})">Odstrániť</button>
+    </div>`).join('');
+}
+
+function setTheme(mode){
+  document.body.classList.toggle("dark",mode==="dark");
+  localStorage.setItem("zsskTrain_theme",mode);
+  const l=document.getElementById("lightModeBtn"), d=document.getElementById("darkModeBtn");
+  if(l&&d){
+    l.classList.toggle("selected",mode==="light");
+    d.classList.toggle("selected",mode==="dark");
+  }
+}
+function loadTheme(){
+  const mode=localStorage.getItem("zsskTrain_theme")||"light";
+  setTheme(mode);
+}
+
+function saveData(){
+  localStorage.setItem("zsskTrain_data",JSON.stringify(data));
+  localStorage.setItem("zsskTrain_activeTrip",activeTrip||"");
+  localStorage.setItem("zsskTrain_currentStop",String(currentStop));
+  localStorage.setItem("zsskTrain_alerts",JSON.stringify(operationalAlerts));
+  const now=new Date();
+  const el=document.getElementById("saveStatus");
+  if(el) el.textContent="Uložené: "+now.toLocaleString("sk-SK");
+  toast("Údaje boli uložené");
+}
+function autoSave(){
+  localStorage.setItem("zsskTrain_data",JSON.stringify(data));
+}
+function loadSavedData(){
+  try{
+    const saved=localStorage.getItem("zsskTrain_data");
+    if(saved){
+      const parsed=JSON.parse(saved);
+      if(parsed && typeof parsed==="object") data=parsed;
+    }
+    const trip=localStorage.getItem("zsskTrain_activeTrip");
+    if(trip && data[trip]) activeTrip=trip;
+    const cs=Number(localStorage.getItem("zsskTrain_currentStop"));
+    if(Number.isInteger(cs) && cs>=0) currentStop=cs;
+    const alerts=localStorage.getItem("zsskTrain_alerts");
+    if(alerts) operationalAlerts=JSON.parse(alerts)||[];
+  }catch(e){}
+}
+function startTrip(){
+  const id=document.getElementById("startTripLine").value;
+  if(!id || !data[id]) return toast("Najprv vytvor linku");
+  activeTrip=id;
+  currentStop=0;
+  document.getElementById("routeSelect").value=id;
+  localStorage.setItem("zsskTrain_activeTrip",id);
+  localStorage.setItem("zsskTrain_currentStop","0");
+  renderStops();
+  renderTripStatus();
+  toast("Vlak "+id+" bol spustený");
+  syncBoardStationToCurrentStop();
+}
+function finishTrip(){
+  if(!activeTrip) return;
+  const ended=activeTrip;
+  activeTrip=null;
+  currentStop=0;
+  localStorage.setItem("zsskTrain_activeTrip","");
+  localStorage.setItem("zsskTrain_currentStop","0");
+  document.getElementById("finishTripWrap").style.display="none";
+  renderTripStatus();
+  updateDelay();
+  document.querySelectorAll(".nav").forEach(x=>x.classList.remove("active"));
+  const homeNav=document.querySelector('.nav[data-screen="home"]');
+  if(homeNav) homeNav.classList.add("active");
+  document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+  document.getElementById("home").classList.add("active");
+  toast("Vlak "+ended+" bol ukončený");
+}
+function renderTripStatus(){
+  const el=document.getElementById("tripStatus");
+  if(!el) return;
+  el.innerHTML=activeTrip && data[activeTrip]
+    ? `Aktívny vlak: <b>${activeTrip} – ${data[activeTrip].route}</b>`
+    : "Žiadny vlak nie je aktívny.";
+}
+
+
+let paymentTerminalTimer1=null;
+let paymentTerminalTimer2=null;
+
+function closePaymentTerminal(){
+  clearTimeout(paymentTerminalTimer1);
+  clearTimeout(paymentTerminalTimer2);
+  document.getElementById("paymentTerminalOverlay")?.classList.remove("open");
+}
+
+function openPaymentTerminal(){
+  const overlay=document.getElementById("paymentTerminalOverlay");
+  const body=document.getElementById("paymentTerminalBody");
+  if(!overlay || !body) return;
+
+  const amount=document.getElementById("price")?.textContent||"0,00";
+  overlay.classList.add("open");
+
+  if(selectedPayment==="Hotovosť"){
+    body.innerHTML=`
+      <div class="pay-terminal-icon">💶</div>
+      <div class="pay-terminal-title">Hotovostná platba</div>
+      <div class="pay-terminal-sub">Prijmite hotovosť od cestujúceho a potvrďte platbu.</div>
+      <div class="pay-terminal-amount">${amount} €</div>
+      <div class="cash-grid">
+        <div class="cash-box"><div class="cash-label">Cena lístka</div><div class="cash-value">${amount} €</div></div>
+        <div class="cash-box"><div class="cash-label">Spôsob platby</div><div class="cash-value">Hotovosť</div></div>
+      </div>
+      <div class="pay-terminal-actions">
+        <button class="pay-terminal-btn secondary" onclick="closePaymentTerminal()">Zrušiť</button>
+        <button class="pay-terminal-btn primary" onclick="approvePaymentTerminal()">Potvrdiť</button>
+      </div>`;
+    return;
+  }
+
+  if(selectedPayment==="Platobná karta" || selectedPayment==="Karta"){
+    body.innerHTML=`
+      <div class="pay-terminal-icon">💳</div>
+      <div class="pay-terminal-title">Priložte kartu</div>
+      <div class="pay-terminal-sub">Priložte kartu alebo zariadenie k terminálu.</div>
+      <div class="pay-terminal-amount">${amount} €</div>
+      <div class="pay-terminal-wave"><span></span><span></span><span></span></div>
+      <div class="pay-terminal-actions">
+        <button class="pay-terminal-btn secondary" onclick="closePaymentTerminal()">Zrušiť</button>
+      </div>`;
+
+    paymentTerminalTimer1=setTimeout(()=>{
+      body.innerHTML=`
+        <div class="pay-terminal-icon">⌛</div>
+        <div class="pay-terminal-title">Spracovanie platby</div>
+        <div class="pay-terminal-sub">Komunikácia s platobným terminálom…</div>
+        <div class="pay-terminal-amount">${amount} €</div>
+        <div class="pay-terminal-wave"><span></span><span></span><span></span></div>`;
+    },1300);
+
+    paymentTerminalTimer2=setTimeout(()=>approvePaymentTerminal(),2700);
+    return;
+  }
+
+  body.innerHTML=`
+    <div class="pay-terminal-icon">🪪</div>
+    <div class="pay-terminal-title">Priložte dopravnú kartu</div>
+    <div class="pay-terminal-sub">Priložte kartu k čítačke a podržte ju na mieste.</div>
+    <div class="pay-terminal-amount">${amount} €</div>
+    <div class="pay-terminal-wave"><span></span><span></span><span></span></div>
+    <div class="pay-terminal-actions">
+      <button class="pay-terminal-btn secondary" onclick="closePaymentTerminal()">Zrušiť</button>
+    </div>`;
+
+  paymentTerminalTimer1=setTimeout(()=>approvePaymentTerminal(),1800);
+}
+
+function approvePaymentTerminal(){
+  clearTimeout(paymentTerminalTimer1);
+  clearTimeout(paymentTerminalTimer2);
+  const body=document.getElementById("paymentTerminalBody");
+  const amount=document.getElementById("price")?.textContent||"0,00";
+  if(!body) return;
+
+  body.innerHTML=`
+    <div class="pay-terminal-approved">✓</div>
+    <div class="pay-terminal-title">Platba schválená</div>
+    <div class="pay-terminal-sub">Transakcia bola úspešne prijatá.</div>
+    <div class="pay-terminal-amount">${amount} €</div>
+    <div class="pay-terminal-actions">
+      <button class="pay-terminal-btn primary" onclick="finishPaymentAndClose()">Hotovo</button>
+    </div>`;
+}
+
+function finishPaymentAndClose(){
+  finalizeTicketSale();
+  closePaymentTerminal();
+}
+
+
+function saveTransaction(tx){
+  transactionHistory.unshift(tx);
+  if(transactionHistory.length>500) transactionHistory=transactionHistory.slice(0,500);
+  localStorage.setItem("transactionHistory",JSON.stringify(transactionHistory));
+  renderTransactions();
+}
+
+function renderTransactions(){
+  const el=document.getElementById("transactionList");
+  if(!el) return;
+  if(!transactionHistory.length){
+    el.innerHTML='<div class="transaction-empty">Zatiaľ tu nie sú žiadne transakcie.</div>';
+    return;
+  }
+  el.innerHTML=transactionHistory.map(tx=>`
+    <div class="transaction-card">
+      <div>
+        <div class="transaction-title">${tx.destination}</div>
+        <div class="transaction-meta">${tx.tariff} · ${tx.payment}<br>${tx.route||''} · ${tx.date}</div>
+      </div>
+      <div class="transaction-price">${tx.price} €</div>
+    </div>`).join('');
+}
+
+function clearTransactions(){
+  if(!confirm("Naozaj chceš vymazať celú históriu transakcií?")) return;
+  transactionHistory=[];
+  localStorage.setItem("transactionHistory","[]");
+  renderTransactions();
+  toast("História transakcií vymazaná");
+}
+
+function finalizeTicketSale(){
+  const s=document.getElementById('payStop');
+  if(!s || !s.value) return toast("Nie je dostupná cieľová zastávka/stanica");
+
+  const destination=s.options[s.selectedIndex].textContent;
+  const tariff=document.getElementById('tariff')?.selectedOptions?.[0]?.textContent || "";
+  const price=document.getElementById('price').textContent;
+  const routeId=document.getElementById('payLine')?.value || "";
+  const now=new Date();
+
+  document.getElementById('lastPayment').innerHTML=
+    `<b>${price} €</b><br>${tariff}<br>Cieľ: ${destination}<br>Platba: ${selectedPayment}<br><small>${now.toLocaleTimeString('sk-SK')}</small>`;
+
+  saveTransaction({
+    destination,
+    tariff,
+    payment:selectedPayment,
+    price,
+    route:routeId,
+    date:now.toLocaleString('sk-SK')
+  });
+
+  toast("Lístok zaevidovaný");
+}
+
+
+function setUiZoom(value){
+  const scale=Number(value)||1;
+  document.documentElement.style.zoom=String(scale);
+  localStorage.setItem("uiZoom",String(scale));
+}
+
+function loadUiZoom(){
+  const saved=localStorage.getItem("uiZoom")||"1";
+  const select=document.getElementById("uiZoom");
+  if(select) select.value=saved;
+  setUiZoom(saved);
+}
+
+async function toggleFullscreen(){
+  try{
+    if(!document.fullscreenElement){
+      await document.documentElement.requestFullscreen();
+    }else{
+      await document.exitFullscreen();
+    }
+  }catch(e){
+    toast(isIOSDevice() ? "Na iPhone použi Safari → Zdieľať → Pridať na plochu" : "Celá obrazovka nie je v tomto prehliadači dostupná");
+  }
+}
+
+function toast(t){
+  const x=document.getElementById('toast');
+  x.textContent=t; x.style.display='block';
+  clearTimeout(window.__toast);
+  window.__toast=setTimeout(()=>x.style.display='none',2200);
+}
+
+// ZSSK_GLOBAL_T_SHORTCUT
+document.addEventListener("keydown", function(e){
+  if(e.key.toLowerCase()!=="t" || e.repeat) return;
+  const tag=(document.activeElement?.tagName||"").toLowerCase();
+  const editing=tag==="input" || tag==="textarea" || tag==="select" || document.activeElement?.isContentEditable;
+  if(editing) return;
+  e.preventDefault();
+  nextStop();
+});
+
+
+migrateStopsToMinuteModel(); // MINUTE_MODEL_INIT
+renderTransactions(); // INIT_TRANSACTIONS
+
+// iPhone/PWA support
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+function isIOSDevice(){
+ return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+}
+
+</script>
+</body>
+</html>
